@@ -152,15 +152,29 @@ const GameScreen = ({ onEnd }) => {
   }, [gameState, countdown, shootBall]);
 
   useEffect(() => {
-    let ghostTimer;
+    let timerId;
     if (gameState === 'COUNTDOWN') {
-      ghostTimer = setInterval(() => {
-        const positions = ['left', 'center', 'right'];
-        const randomPos = positions[Math.floor(Math.random() * positions.length)];
-        setGhostBallPos(randomPos);
-      }, 400); // Cambia cada 400ms
+      const sequence = ['left', 'right', 'center'];
+      let index = 0;
+      let currentDelay = 700; // Inicia lento
+      const minDelay = 120;   // Velocidad máxima
+      
+      const moveBall = () => {
+        setGhostBallPos(sequence[index % sequence.length]);
+        index++;
+        
+        // Acelerar reduciendo el retraso en un 20% en cada salto
+        if (currentDelay > minDelay) {
+          currentDelay = Math.max(minDelay, currentDelay * 0.8);
+        }
+        
+        timerId = setTimeout(moveBall, currentDelay);
+      };
+      
+      // Iniciar el primer movimiento rápido para que comience la secuencia
+      timerId = setTimeout(moveBall, 50);
     }
-    return () => clearInterval(ghostTimer);
+    return () => clearTimeout(timerId);
   }, [gameState]);
 
   const renderHUD = () => {
@@ -245,7 +259,17 @@ const GameScreen = ({ onEnd }) => {
       }}>
         <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 4vw, 1.2rem)', textShadow: '2px 2px 4px rgba(0,0,0,1)' }}>Tiro {currentShot} de {TOTAL_SHOTS}</h3>
         {renderHUD()}
-        <h2 style={{ color: 'var(--color-gold)', margin: 0, minHeight: '40px', fontSize: 'clamp(1.5rem, 6vw, 2rem)', textShadow: '2px 2px 6px rgba(0,0,0,1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <h2 style={{ 
+          color: 'var(--color-gold)', 
+          margin: 0, 
+          minHeight: '60px', 
+          fontSize: (gameState === 'COUNTDOWN' && countdown > 0) ? 'clamp(4rem, 15vw, 6rem)' : 'clamp(1.5rem, 6vw, 2rem)', 
+          textShadow: '3px 3px 8px rgba(0,0,0,1)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          fontWeight: 900
+        }}>
           {gameState === 'COUNTDOWN' && countdown > 0 ? countdown : message}
         </h2>
       </div>

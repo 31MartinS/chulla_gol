@@ -4,9 +4,11 @@ import FormScreen from './components/FormScreen';
 import InstructionScreen from './components/InstructionScreen';
 import GameScreen from './components/GameScreen';
 import ResultScreen from './components/ResultScreen';
+import SplashScreen from './components/SplashScreen';
 import './index.css';
 
 const SCREENS = {
+  SPLASH: 'SPLASH',
   FORM: 'FORM',
   INSTRUCTIONS: 'INSTRUCTIONS',
   GAME: 'GAME',
@@ -14,7 +16,7 @@ const SCREENS = {
 };
 
 function App() {
-  const [currentScreen, setCurrentScreen] = useState(SCREENS.FORM);
+  const [currentScreen, setCurrentScreen] = useState(SCREENS.SPLASH);
   const [, setUserData] = useState(null);
   const [gameResult, setGameResult] = useState(null); 
 
@@ -52,6 +54,10 @@ function App() {
     }
   }, [currentScreen, hasInteracted]);
 
+  const handleSplashEnd = () => {
+    setCurrentScreen(SCREENS.FORM);
+  };
+
   const handleFormSubmit = (data) => {
     setUserData(data);
     setCurrentScreen(SCREENS.INSTRUCTIONS);
@@ -67,7 +73,7 @@ function App() {
   };
 
   const handleRestart = () => {
-    setCurrentScreen(SCREENS.FORM);
+    setCurrentScreen(SCREENS.SPLASH);
     setUserData(null);
     setGameResult(null);
   };
@@ -78,6 +84,9 @@ function App() {
       <audio ref={bgMusicRef} src="/sounds/soccer.mp3" loop />
       
       <AnimatePresence mode="wait">
+        {currentScreen === SCREENS.SPLASH && (
+          <SplashScreen key="splash" onStart={handleSplashEnd} />
+        )}
         {currentScreen === SCREENS.FORM && (
           <FormScreen key="form" onSubmit={handleFormSubmit} />
         )}
