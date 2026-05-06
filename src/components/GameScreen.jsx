@@ -144,33 +144,40 @@ const GameScreen = ({ onEnd }) => {
   useEffect(() => {
     let timerId;
     if (gameState === 'GHOST_MOVING') {
+      const DECOY_MOVES = 3; // Últimos N movimientos son señuelos (pistas falsas)
       const totalMoves = Math.floor(Math.random() * 15) + 15; // 15 a 29 saltos
       let moveCount = 0;
-      let currentDelay = 250; // Inicia un poco rápido
-      const minDelay = 150;   // Velocidad máxima constante
+      let currentDelay = 250;
+      const minDelay = 120;
 
       const moveBall = () => {
-        // Mover a una posición aleatoria diferente a la actual
         const possiblePos = ['left', 'center', 'right'].filter(p => p !== ghostBallPosRef.current);
         const nextPos = possiblePos[Math.floor(Math.random() * possiblePos.length)];
 
         setGhostBallPos(nextPos);
         moveCount++;
 
-        // Aceleración lineal suave
+        // Aceleración lineal suave durante la fase normal
         if (currentDelay > minDelay) {
           currentDelay -= 10;
         }
 
+        // ★ Guardar la posición REAL justo ANTES de los movimientos señuelo
+        // Así el balón termina visualmente en un lugar diferente al real
+        if (moveCount === totalMoves - DECOY_MOVES) {
+          finalBallPosRef.current = nextPos;
+        }
+
         if (moveCount < totalMoves) {
-          timerId = setTimeout(moveBall, currentDelay);
+          // En los últimos movimientos señuelo, ir muy rápido para confundir
+          const delay = moveCount >= totalMoves - DECOY_MOVES ? 75 : currentDelay;
+          timerId = setTimeout(moveBall, delay);
         } else {
-          // Guardar la última posición real antes de ocultar
-          finalBallPosRef.current = ghostBallPosRef.current;
-          setGhostBallPos('hidden'); // Ocultar el balón al instante
+          // Ocultar el balón — el jugador vio una posición FALSA al final
+          setGhostBallPos('hidden');
           timerId = setTimeout(() => {
             setGameState('COUNTDOWN');
-            setCountdown(3);
+            setCountdown(4); // 4 = muestra "¡ELIGE!", luego 3,2,1
             setMessage('¡Prepárate!');
 
             if (whistleAudio.current) {
@@ -183,7 +190,7 @@ const GameScreen = ({ onEnd }) => {
                 }
               }, 800);
             }
-          }, 0); // Sin pausa — transición inmediata
+          }, 0);
         }
       };
 
@@ -276,15 +283,15 @@ const GameScreen = ({ onEnd }) => {
         <h2 style={{
           color: 'var(--color-gold)',
           margin: 0,
-          minHeight: '60px',
-          fontSize: (gameState === 'COUNTDOWN' && countdown > 0) ? 'clamp(4rem, 15vw, 6rem)' : 'clamp(1.5rem, 6vw, 2rem)',
+          minHeight: '40px',
+          fontSize: 'clamp(1.5rem, 6vw, 2rem)',
           textShadow: '3px 3px 8px rgba(0,0,0,1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 900
         }}>
-          {gameState === 'COUNTDOWN' && countdown > 0 ? countdown : message}
+          {message}
         </h2>
       </div>
 
@@ -400,6 +407,55 @@ const GameScreen = ({ onEnd }) => {
         </motion.div>
 
       </div>
+
+      {/* Overlay de Countdown — pantalla completa */}
+      <AnimatePresence>
+        {gameState === 'COUNTDOWN' && countdown > 0 && (
+          <motion.div
+            key={`countdown-overlay-${countdown}`}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 50,
+              background: countdown === 4 ? 'rgba(0, 5, 20, 0.65)' : 'transparent',
+              backdropFilter: countdown === 4 ? 'blur(3px)' : 'none',
+              pointerEvents: 'none'
+            }}
+          >
+            <motion.div
+              key={`num-${countdown}`}
+              initial={{ scale: 2.2, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.3, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+              style={{
+                fontSize: countdown === 4
+                  ? 'clamp(4rem, 18vw, 7rem)'
+                  : 'clamp(5.5rem, 24vw, 9rem)',
+                fontWeight: 900,
+                lineHeight: 1,
+                color: countdown === 4 ? 'rgba(255, 230, 80, 1)' : '#fff',
+                textShadow: countdown === 4
+                  ? '0 0 30px rgba(255, 200, 0, 1), 0 0 60px rgba(255, 140, 0, 0.7), 0 6px 18px rgba(0,0,0,0.9)'
+                  : '0 0 30px rgba(255, 200, 0, 0.9), 0 0 60px rgba(255, 120, 0, 0.6), 0 6px 18px rgba(0,0,0,0.9)',
+                fontFamily: 'inherit',
+                letterSpacing: countdown === 4 ? '0.05em' : '0',
+                textTransform: 'uppercase'
+              }}
+            >
+              {countdown === 4 ? '¡ELIGE!' : countdown}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };
