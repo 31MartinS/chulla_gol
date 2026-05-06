@@ -41,13 +41,13 @@ const ResultScreen = ({ result, onRestart }) => {
         </p>
         
         <h2 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem 0', color: 'var(--color-gold)' }}>
-          {isWinner ? '¡Ganaste el Premio Mayor!' : '¡Premio de Consolación!'}
+          {isWinner ? '¡Premio Mayor!' : '¡Premio!'}
         </h2>
         
         <p style={{ fontSize: '1.1rem', color: 'var(--color-white)', margin: 0, fontWeight: 600 }}>
-          {isWinner 
-            ? '👕 Camiseta de Ecuador autografiada por Hernán Galíndez' 
-            : '⚽ Balón autografiado exclusivo'}
+          {saves === 2 && '👕 1 camiseta para apoyar a la selección'}
+          {saves === 1 && '⚽ Balón'}
+          {saves === 0 && '🥤 Tomatodo'}
         </p>
       </div>
 
@@ -59,7 +59,7 @@ const ResultScreen = ({ result, onRestart }) => {
         className="btn-primary" 
         style={{ width: '100%' }}
       >
-        Volver a Jugar
+        VOLVER A JUGAR
       </motion.button>
     </motion.div>
   );

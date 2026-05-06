@@ -12,6 +12,7 @@ const GameScreen = ({ onEnd }) => {
   const [ballPosition, setBallPosition] = useState('center'); // left, right, center
   const [countdown, setCountdown] = useState(3);
   const [message, setMessage] = useState('Toca un lado para empezar');
+  const [ghostBallPos, setGhostBallPos] = useState('center'); // left, center, right
 
   // Referencias de Audio
   const whistleAudio = useRef(null);
@@ -68,6 +69,11 @@ const GameScreen = ({ onEnd }) => {
     glovePosRef.current = glovePosition;
   }, [glovePosition]);
 
+  const ghostBallPosRef = useRef(ghostBallPos);
+  useEffect(() => {
+    ghostBallPosRef.current = ghostBallPos;
+  }, [ghostBallPos]);
+
   const currentShotRef = useRef(currentShot);
   useEffect(() => {
     currentShotRef.current = currentShot;
@@ -104,12 +110,15 @@ const GameScreen = ({ onEnd }) => {
         setCurrentShot(prev => prev + 1);
         resetRound();
       } else {
-        onEnd({ saves: isSave ? savesRef.current + 1 : savesRef.current, total: TOTAL_SHOTS });
+        onEnd({ saves: savesRef.current, total: TOTAL_SHOTS });
       }
-    }, 2500);
+    }, 4000);
   }, [onEnd, resetRound]);
 
   const shootBall = useCallback(() => {
+    // La dirección del balón es exactamente la última posición del balón fantasma
+    const targetDir = ghostBallPosRef.current;
+
     setGameState('SHOOTING');
     setMessage('¡Disparo!'); 
     
@@ -119,14 +128,11 @@ const GameScreen = ({ onEnd }) => {
       kickAudio.current.play().catch(e => console.log('Audio error:', e));
     }
 
-    const directions = ['left', 'right'];
-    // eslint-disable-next-line react-hooks/purity
-    const randomDir = directions[Math.floor(Math.random() * directions.length)];
-    setBallPosition(randomDir);
+    setBallPosition(targetDir);
 
     // Tiempo de vuelo del balón
     setTimeout(() => {
-      evaluateResult(randomDir);
+      evaluateResult(targetDir);
     }, 800);
   }, [evaluateResult]);
 
@@ -145,9 +151,21 @@ const GameScreen = ({ onEnd }) => {
     return () => clearTimeout(timer);
   }, [gameState, countdown, shootBall]);
 
+  useEffect(() => {
+    let ghostTimer;
+    if (gameState === 'COUNTDOWN') {
+      ghostTimer = setInterval(() => {
+        const positions = ['left', 'center', 'right'];
+        const randomPos = positions[Math.floor(Math.random() * positions.length)];
+        setGhostBallPos(randomPos);
+      }, 400); // Cambia cada 400ms
+    }
+    return () => clearInterval(ghostTimer);
+  }, [gameState]);
+
   const renderHUD = () => {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '15px 0' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', margin: '10px 0' }}>
         {[...Array(TOTAL_SHOTS)].map((_, i) => {
           let bgColor = 'rgba(255,255,255,0.2)';
           if (results[i] === 'save') bgColor = 'var(--color-green)';
@@ -157,7 +175,7 @@ const GameScreen = ({ onEnd }) => {
               key={i}
               initial={false}
               animate={{ backgroundColor: bgColor }}
-              style={{ width: '24px', height: '24px', borderRadius: '50%', border: '2px solid white' }}
+              style={{ width: 'clamp(20px, 5vw, 24px)', height: 'clamp(20px, 5vw, 24px)', borderRadius: '50%', border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
             />
           );
         })}
@@ -172,13 +190,13 @@ const GameScreen = ({ onEnd }) => {
       return { scale: 0.15, top: '40%', left: '50%', opacity: 1 };
     }
     if (gameState === 'SHOOTING') {
-      return { scale: 1.5, top: '80%', left: ballPosition === 'left' ? '20%' : '80%', opacity: 1 };
+      return { scale: 1.5, top: '80%', left: ballPosition === 'left' ? '20%' : ballPosition === 'right' ? '80%' : '50%', opacity: 1 };
     }
     if (gameState === 'ROUND_RESULT') {
       if (isSave) {
-        return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '15%' : '85%', opacity: 1 };
+        return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '15%' : ballPosition === 'right' ? '85%' : '50%', opacity: 1 };
       } else {
-        return { scale: 3, top: '130%', left: ballPosition === 'left' ? '10%' : '90%', opacity: 0 };
+        return { scale: 3, top: '130%', left: ballPosition === 'left' ? '10%' : ballPosition === 'right' ? '90%' : '50%', opacity: 0 };
       }
     }
     return { scale: 0.15, top: '40%', left: '50%' };
@@ -215,10 +233,19 @@ const GameScreen = ({ onEnd }) => {
       />
 
       {/* HUD Header */}
-      <div style={{ padding: '20px', textAlign: 'center', zIndex: 10, position: 'relative' }}>
-        <h3 style={{ margin: 0, textShadow: '1px 1px 3px rgba(0,0,0,0.8)' }}>Tiro {currentShot} de {TOTAL_SHOTS}</h3>
+      <div style={{ 
+        padding: 'calc(10px + env(safe-area-inset-top)) 10px 10px 10px', 
+        textAlign: 'center', 
+        zIndex: 10, 
+        position: 'relative',
+        background: 'linear-gradient(to bottom, rgba(2, 18, 38, 0.85) 0%, rgba(2, 18, 38, 0) 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center'
+      }}>
+        <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 4vw, 1.2rem)', textShadow: '2px 2px 4px rgba(0,0,0,1)' }}>Tiro {currentShot} de {TOTAL_SHOTS}</h3>
         {renderHUD()}
-        <h2 style={{ color: 'var(--color-gold)', minHeight: '40px', textShadow: '2px 2px 5px rgba(0,0,0,0.8)' }}>
+        <h2 style={{ color: 'var(--color-gold)', margin: 0, minHeight: '40px', fontSize: 'clamp(1.5rem, 6vw, 2rem)', textShadow: '2px 2px 6px rgba(0,0,0,1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           {gameState === 'COUNTDOWN' && countdown > 0 ? countdown : message}
         </h2>
       </div>
@@ -226,15 +253,59 @@ const GameScreen = ({ onEnd }) => {
       {/* Game Area */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
         
+        {/* Balón Fantasma */}
+        <AnimatePresence>
+          {gameState === 'COUNTDOWN' && (
+            <motion.img
+              key="ghost-ball"
+              src="/assets/balon.svg"
+              initial={{ scale: 1.2, top: '60%', left: '50%', opacity: 0 }}
+              animate={{
+                scale: 1.2,
+                top: '60%',
+                left: ghostBallPos === 'left' ? '20%' : ghostBallPos === 'right' ? '80%' : '50%',
+                opacity: 0.6
+              }}
+              exit={{ opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              style={{
+                position: 'absolute',
+                marginLeft: '-35px',
+                marginTop: '-35px',
+                width: '70px',
+                height: '70px',
+                zIndex: 3,
+                filter: 'drop-shadow(0px 5px 10px rgba(255, 255, 255, 0.8)) hue-rotate(90deg)' // Tinte para distinguirlo del real
+              }}
+            />
+          )}
+        </AnimatePresence>
+
         {/* Zonas táctiles */}
         <div 
           onClick={() => handleTouch('left')}
-          style={{ position: 'absolute', top: 0, left: 0, width: '50%', height: '100%', zIndex: 20, cursor: 'pointer' }}
-        />
+          style={{ position: 'absolute', top: 0, left: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>IZQ</span>
+          </div>
+        </div>
+        <div 
+          onClick={() => handleTouch('center')}
+          style={{ position: 'absolute', top: 0, left: '33.3%', width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>CEN</span>
+          </div>
+        </div>
         <div 
           onClick={() => handleTouch('right')}
-          style={{ position: 'absolute', top: 0, right: 0, width: '50%', height: '100%', zIndex: 20, cursor: 'pointer' }}
-        />
+          style={{ position: 'absolute', top: 0, right: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        >
+          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>DER</span>
+          </div>
+        </div>
 
         {/* Pateador */}
         <div style={{ position: 'absolute', top: '15%', left: '0', width: '100%', height: '50%', display: 'flex', justifyContent: 'center', zIndex: 2 }}>
@@ -294,13 +365,6 @@ const GameScreen = ({ onEnd }) => {
           />
         </motion.div>
 
-        {/* Indicadores Táctiles */}
-        <div style={{ position: 'absolute', bottom: '2%', left: '5%', color: 'rgba(255,255,255,0.6)', textShadow: '1px 1px 2px black', pointerEvents: 'none', fontSize: '0.8rem', zIndex: 10 }}>
-          Toca aquí (Izq)
-        </div>
-        <div style={{ position: 'absolute', bottom: '2%', right: '5%', color: 'rgba(255,255,255,0.6)', textShadow: '1px 1px 2px black', pointerEvents: 'none', fontSize: '0.8rem', zIndex: 10 }}>
-          Toca aquí (Der)
-        </div>
       </div>
     </motion.div>
   );
