@@ -7,11 +7,11 @@ const GameScreen = ({ onEnd }) => {
   const [saves, setSaves] = useState(0);
   const [results, setResults] = useState([]); // Array of 'save' or 'goal'
 
-  const [gameState, setGameState] = useState('IDLE'); // IDLE, COUNTDOWN, SHOOTING, ROUND_RESULT
+  const [gameState, setGameState] = useState('IDLE'); // IDLE, GHOST_MOVING, COUNTDOWN, SHOOTING, ROUND_RESULT
   const [glovePosition, setGlovePosition] = useState('center'); // left, right, center
   const [ballPosition, setBallPosition] = useState('center'); // left, right, center
   const [countdown, setCountdown] = useState(3);
-  const [message, setMessage] = useState('Toca un lado para empezar');
+  const [message, setMessage] = useState('Toca la pantalla para empezar');
   const [ghostBallPos, setGhostBallPos] = useState('center'); // left, center, right
 
   // Referencias de Audio
@@ -31,37 +31,24 @@ const GameScreen = ({ onEnd }) => {
     setGameState('IDLE');
     setGlovePosition('center');
     setBallPosition('center');
-    setMessage('Toca un lado para empezar');
+    setMessage('Toca la pantalla para empezar');
   }, []);
 
-  const startCountdown = useCallback(() => {
-    setGameState('COUNTDOWN');
-    setCountdown(3);
-    setMessage('¡Prepárate!');
-
-    // Suena el silbato al iniciar la cuenta
-    if (whistleAudio.current) {
-      whistleAudio.current.currentTime = 0;
-      whistleAudio.current.play().catch(e => console.log('Audio error:', e));
-
-      // Detenemos el silbato automáticamente después de 800ms (0.8 segundos)
-      setTimeout(() => {
-        if (whistleAudio.current) {
-          whistleAudio.current.pause();
-        }
-      }, 800);
-    }
+  const startGhostMoving = useCallback(() => {
+    setGameState('GHOST_MOVING');
+    setMessage('¡Atento al balón!');
   }, []);
 
   const handleTouch = (side) => {
-    // Bloquear los guantes si ya se pateó el balón o se está mostrando el resultado
-    if (gameState === 'ROUND_RESULT' || gameState === 'SHOOTING') return;
+    if (gameState === 'IDLE') {
+      startGhostMoving();
+      return;
+    }
+
+    // Bloquear los guantes si no estamos en COUNTDOWN
+    if (gameState !== 'COUNTDOWN') return;
 
     setGlovePosition(side);
-
-    if (gameState === 'IDLE') {
-      startCountdown();
-    }
   };
 
   const glovePosRef = useRef(glovePosition);
@@ -153,25 +140,48 @@ const GameScreen = ({ onEnd }) => {
 
   useEffect(() => {
     let timerId;
-    if (gameState === 'COUNTDOWN') {
-      const sequence = ['left', 'right', 'center'];
-      let index = 0;
-      let currentDelay = 700; // Inicia lento
-      const minDelay = 220;   // Velocidad máxima
+    if (gameState === 'GHOST_MOVING') {
+      const totalMoves = Math.floor(Math.random() * 15) + 15; // 15 a 29 saltos
+      let moveCount = 0;
+      let currentDelay = 250; // Inicia un poco rápido
+      const minDelay = 150;   // Velocidad máxima constante
 
       const moveBall = () => {
-        setGhostBallPos(sequence[index % sequence.length]);
-        index++;
+        // Mover a una posición aleatoria diferente a la actual
+        const possiblePos = ['left', 'center', 'right'].filter(p => p !== ghostBallPosRef.current);
+        const nextPos = possiblePos[Math.floor(Math.random() * possiblePos.length)];
+        
+        setGhostBallPos(nextPos);
+        moveCount++;
 
-        // Acelerar reduciendo el retraso en un 20% en cada salto
+        // Aceleración lineal suave
         if (currentDelay > minDelay) {
-          currentDelay = Math.max(minDelay, currentDelay * 0.8);
+          currentDelay -= 10;
         }
 
-        timerId = setTimeout(moveBall, currentDelay);
+        if (moveCount < totalMoves) {
+          timerId = setTimeout(moveBall, currentDelay);
+        } else {
+          // Terminar movimiento y esperar un momento
+          timerId = setTimeout(() => {
+            setGameState('COUNTDOWN');
+            setCountdown(3);
+            setMessage('¡Prepárate!');
+
+            if (whistleAudio.current) {
+              whistleAudio.current.currentTime = 0;
+              whistleAudio.current.play().catch(e => console.log('Audio error:', e));
+
+              setTimeout(() => {
+                if (whistleAudio.current) {
+                  whistleAudio.current.pause();
+                }
+              }, 800);
+            }
+          }, 400); // 400ms de pausa para que el jugador vea dónde quedó
+        }
       };
 
-      // Iniciar el primer movimiento rápido para que comience la secuencia
       timerId = setTimeout(moveBall, 50);
     }
     return () => clearTimeout(timerId);
@@ -197,18 +207,17 @@ const GameScreen = ({ onEnd }) => {
     );
   };
 
-  // Balón
   const getBallAnim = () => {
     const isSave = glovePosition === ballPosition;
-    if (gameState === 'IDLE' || gameState === 'COUNTDOWN') {
+    if (gameState === 'IDLE' || gameState === 'GHOST_MOVING' || gameState === 'COUNTDOWN') {
       return { scale: 0.15, top: '40%', left: '50%', opacity: 1 };
     }
     if (gameState === 'SHOOTING') {
-      return { scale: 1.5, top: '80%', left: ballPosition === 'left' ? '20%' : ballPosition === 'right' ? '80%' : '50%', opacity: 1 };
+      return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '16.66%' : ballPosition === 'right' ? '83.33%' : '50%', opacity: 1 };
     }
     if (gameState === 'ROUND_RESULT') {
       if (isSave) {
-        return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '15%' : ballPosition === 'right' ? '85%' : '50%', opacity: 1 };
+        return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '16.66%' : ballPosition === 'right' ? '83.33%' : '50%', opacity: 1 };
       } else {
         return { scale: 3, top: '130%', left: ballPosition === 'left' ? '10%' : ballPosition === 'right' ? '90%' : '50%', opacity: 0 };
       }
@@ -218,7 +227,7 @@ const GameScreen = ({ onEnd }) => {
 
   // Pateador
   const getKickerImage = () => {
-    if (gameState === 'IDLE' || gameState === 'COUNTDOWN') {
+    if (gameState === 'IDLE' || gameState === 'GHOST_MOVING' || gameState === 'COUNTDOWN') {
       return '/assets/pateador_inicio.svg';
     }
     if (gameState === 'SHOOTING') {
@@ -279,19 +288,19 @@ const GameScreen = ({ onEnd }) => {
 
         {/* Balón Fantasma */}
         <AnimatePresence>
-          {gameState === 'COUNTDOWN' && (
+          {gameState === 'GHOST_MOVING' && (
             <motion.img
               key="ghost-ball"
               src="/assets/balon.svg"
-              initial={{ scale: 1.2, top: '60%', left: '50%', opacity: 0 }}
+              initial={{ scale: 1.2, top: '75%', left: '50%', opacity: 0 }}
               animate={{
                 scale: 1.2,
-                top: '60%',
-                left: ghostBallPos === 'left' ? '20%' : ghostBallPos === 'right' ? '80%' : '50%',
-                opacity: 0.6
+                top: '75%',
+                left: ghostBallPos === 'left' ? '16.66%' : ghostBallPos === 'right' ? '83.33%' : '50%',
+                opacity: 0.8
               }}
               exit={{ opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              transition={{ type: 'tween', duration: 0.15, ease: 'easeInOut' }}
               style={{
                 position: 'absolute',
                 marginLeft: '-35px',
@@ -305,30 +314,23 @@ const GameScreen = ({ onEnd }) => {
           )}
         </AnimatePresence>
 
-        {/* Zonas táctiles */}
-        <div
-          onClick={() => handleTouch('left')}
-          style={{ position: 'absolute', top: 0, left: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-        >
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>IZQ</span>
-          </div>
+        {/* Zonas táctiles invisibles para capturar clicks */}
+        <div onClick={() => handleTouch('left')} style={{ position: 'absolute', top: 0, left: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer' }} />
+        <div onClick={() => handleTouch('center')} style={{ position: 'absolute', top: 0, left: '33.3%', width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer' }} />
+        <div onClick={() => handleTouch('right')} style={{ position: 'absolute', top: 0, right: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer' }} />
+
+        {/* Círculos visuales */}
+        <div style={{ position: 'absolute', top: '75%', left: '16.66%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>IZQ</span>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
         </div>
-        <div
-          onClick={() => handleTouch('center')}
-          style={{ position: 'absolute', top: 0, left: '33.3%', width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-        >
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>CEN</span>
-          </div>
+        <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>CEN</span>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
         </div>
-        <div
-          onClick={() => handleTouch('right')}
-          style={{ position: 'absolute', top: 0, right: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-        >
-          <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>DER</span>
-          </div>
+        <div style={{ position: 'absolute', top: '75%', left: '83.33%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>DER</span>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
         </div>
 
         {/* Pateador */}
@@ -365,21 +367,24 @@ const GameScreen = ({ onEnd }) => {
 
         {/* Guantes */}
         <motion.div
+          initial={{ opacity: 0 }}
           animate={{
-            x: glovePosition === 'left' ? '-40%' : glovePosition === 'right' ? '40%' : '0%',
-            y: glovePosition === 'center' ? '20%' : '0%'
+            top: '75%',
+            left: glovePosition === 'left' ? '16.66%' : glovePosition === 'right' ? '83.33%' : '50%',
+            opacity: (gameState === 'IDLE' || gameState === 'GHOST_MOVING') ? 0 : 1
           }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           style={{
             position: 'absolute',
-            bottom: '15%',
-            left: 'calc(50% - 110px)',
+            marginTop: '-70px',
+            marginLeft: '-110px',
             width: '220px',
             height: '140px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
-            zIndex: 5
+            zIndex: 5,
+            pointerEvents: 'none'
           }}
         >
           <img
