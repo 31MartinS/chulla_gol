@@ -24,7 +24,11 @@ function App() {
 
   useEffect(() => {
     const startAudio = () => {
-      if (!hasInteracted) {
+      if (!hasInteracted && bgMusicRef.current) {
+        // En móviles, el play() debe llamarse sincrónicamente en el evento
+        if (currentScreen !== SCREENS.GAME) {
+          bgMusicRef.current.play().catch(e => console.log('Autoplay prevented', e));
+        }
         setHasInteracted(true);
       }
     };
@@ -36,7 +40,7 @@ function App() {
       window.removeEventListener('click', startAudio);
       window.removeEventListener('touchstart', startAudio);
     };
-  }, [hasInteracted]);
+  }, [hasInteracted, currentScreen]);
 
   useEffect(() => {
     if (hasInteracted && bgMusicRef.current) {
