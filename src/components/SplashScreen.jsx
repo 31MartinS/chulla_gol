@@ -29,10 +29,10 @@ const SplashScreen = ({ onStart }) => {
         flexDirection: 'column', 
         justifyContent: 'center', 
         alignItems: 'center',
-        padding: '2rem',
+        padding: '1rem',
         textAlign: 'center',
         cursor: 'pointer',
-        overflow: 'hidden'
+        overflowY: 'auto'
       }}
     >
       {/* Fondo del Estadio */}
@@ -49,7 +49,7 @@ const SplashScreen = ({ onStart }) => {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{ height: '50vh', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))' }}
+          style={{ height: '40vh', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))' }}
         />
 
         <motion.div
@@ -61,8 +61,10 @@ const SplashScreen = ({ onStart }) => {
             fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', 
             color: 'var(--color-gold)', 
             margin: '0', 
-            lineHeight: 1.1,
-            textShadow: '3px 3px 6px rgba(0,0,0,0.8)' 
+            lineHeight: 1.2,
+            textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
+            wordBreak: 'break-word',
+            padding: '0 0.5rem'
           }}>
             ¡CONVIÉRTETE EN LAS MANOS DE LA TRI!
           </h1>
