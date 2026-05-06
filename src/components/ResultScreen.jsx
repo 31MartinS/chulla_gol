@@ -29,18 +29,26 @@ const ResultScreen = ({ result, onRestart }) => {
         )}
       </motion.div>
 
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem', color: isWinner ? 'var(--color-gold)' : 'var(--color-white)' }}>
-        {isWinner ? '¡ERES UN CAMPEÓN!' : '¡BUEN INTENTO!'}
+      <h1 style={{ fontSize: '2.2rem', marginBottom: '1rem', color: isWinner ? 'var(--color-gold)' : 'var(--color-white)', lineHeight: 1.1 }}>
+        {isWinner ? '¡MANOS DE ACERO!' : '¡BUEN INTENTO!'}
       </h1>
 
       <div style={{ backgroundColor: 'var(--color-secondary)', padding: '1.5rem', borderRadius: '15px', width: '100%', marginBottom: '3rem' }}>
-        <p style={{ fontSize: '1.2rem', margin: '0 0 1rem 0' }}>
-          Lograste tapar <strong>{saves}</strong> de {total} penales.
+        <p style={{ fontSize: '1.1rem', margin: '0 0 1rem 0', lineHeight: 1.4 }}>
+          {isWinner 
+            ? `¡Increíble reflejos! Has defendido el arco como un profesional.`
+            : `Lograste tapar ${saves} de ${total} penales. ¡Nada mal!`}
         </p>
         
-        <h2 style={{ fontSize: '1.8rem', margin: 0, color: 'var(--color-gold)' }}>
-          {isWinner ? '¡Ganaste el Premio Mayor!' : '¡Te llevas un Premio de Consolación!'}
+        <h2 style={{ fontSize: '1.5rem', margin: '0 0 0.5rem 0', color: 'var(--color-gold)' }}>
+          {isWinner ? '¡Ganaste el Premio Mayor!' : '¡Premio de Consolación!'}
         </h2>
+        
+        <p style={{ fontSize: '1.1rem', color: 'var(--color-white)', margin: 0, fontWeight: 600 }}>
+          {isWinner 
+            ? '👕 Camiseta de Ecuador autografiada por Hernán Galíndez' 
+            : '⚽ Balón autografiado exclusivo'}
+        </p>
       </div>
 
       <motion.button 

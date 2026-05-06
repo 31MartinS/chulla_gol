@@ -42,11 +42,19 @@ const GameScreen = ({ onEnd }) => {
     if (whistleAudio.current) {
       whistleAudio.current.currentTime = 0;
       whistleAudio.current.play().catch(e => console.log('Audio error:', e));
+      
+      // Detenemos el silbato automáticamente después de 800ms (0.8 segundos)
+      setTimeout(() => {
+        if (whistleAudio.current) {
+          whistleAudio.current.pause();
+        }
+      }, 800);
     }
   }, []);
 
   const handleTouch = (side) => {
-    if (gameState === 'ROUND_RESULT') return;
+    // Bloquear los guantes si ya se pateó el balón o se está mostrando el resultado
+    if (gameState === 'ROUND_RESULT' || gameState === 'SHOOTING') return;
     
     setGlovePosition(side);
 

@@ -10,24 +10,24 @@ const FormScreen = ({ onSubmit }) => {
     aceptaPoliticas: false,
     aceptaPromociones: false
   });
-  
+
   const [errors, setErrors] = useState({});
 
   const validate = () => {
     let tempErrors = {};
     if (!formData.nombre.trim()) tempErrors.nombre = "El nombre es requerido";
-    
+
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(formData.celular)) tempErrors.celular = "Debe tener 10 dígitos numéricos";
-    
+
     const idRegex = /^[0-9]{10}$/;
     if (!idRegex.test(formData.cedula)) tempErrors.cedula = "La cédula debe tener 10 dígitos numéricos";
-    
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.correo)) tempErrors.correo = "Correo electrónico inválido";
 
     if (!formData.aceptaPoliticas) tempErrors.aceptaPoliticas = "Debe aceptar la política de privacidad";
-    
+
     setErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
@@ -42,9 +42,9 @@ const FormScreen = ({ onSubmit }) => {
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     const val = type === 'checkbox' ? checked : value;
-    
+
     setFormData(prev => ({ ...prev, [name]: val }));
-    
+
     // Clear error for this specific field if it's being corrected
     if (errors[name]) {
       setErrors(prev => {
@@ -56,7 +56,7 @@ const FormScreen = ({ onSubmit }) => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="form-screen"
       initial={{ opacity: 0, x: -50 }}
       animate={{ opacity: 1, x: 0 }}
@@ -65,17 +65,20 @@ const FormScreen = ({ onSubmit }) => {
       style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}
     >
       <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '1rem' }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '0.2rem' }}>CHULLA GOL</h1>
-        <p style={{ color: 'var(--color-accent-teal)' }}>¡Juega y Gana!</p>
+        <img src="/assets/Electrolux.png" alt="Electrolux" style={{ maxHeight: '70px', marginBottom: '1rem', maxWidth: '80%' }} />
+        <p style={{ color: 'var(--color-gold)', fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          Conviértete en las manos del Ecuador
+          <img src="https://flagcdn.com/w40/ec.png" alt="Bandera Ecuador" style={{ height: '1.2rem', borderRadius: '2px' }} />
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
         <div className="input-group">
           <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Nombre Completo</label>
-          <input 
-            type="text" 
-            name="nombre" 
-            value={formData.nombre} 
+          <input
+            type="text"
+            name="nombre"
+            value={formData.nombre}
             onChange={handleChange}
             style={inputStyle}
             placeholder="Ej. Juan Pérez"
@@ -85,10 +88,10 @@ const FormScreen = ({ onSubmit }) => {
 
         <div className="input-group">
           <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Celular</label>
-          <input 
-            type="tel" 
-            name="celular" 
-            value={formData.celular} 
+          <input
+            type="tel"
+            name="celular"
+            value={formData.celular}
             onChange={handleChange}
             style={inputStyle}
             placeholder="0991234567"
@@ -99,10 +102,10 @@ const FormScreen = ({ onSubmit }) => {
 
         <div className="input-group">
           <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Cédula</label>
-          <input 
-            type="text" 
-            name="cedula" 
-            value={formData.cedula} 
+          <input
+            type="text"
+            name="cedula"
+            value={formData.cedula}
             onChange={handleChange}
             style={inputStyle}
             placeholder="1701234567"
@@ -113,10 +116,10 @@ const FormScreen = ({ onSubmit }) => {
 
         <div className="input-group">
           <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Correo Electrónico</label>
-          <input 
-            type="email" 
-            name="correo" 
-            value={formData.correo} 
+          <input
+            type="email"
+            name="correo"
+            value={formData.correo}
             onChange={handleChange}
             style={inputStyle}
             placeholder="juan@correo.com"
@@ -126,10 +129,10 @@ const FormScreen = ({ onSubmit }) => {
 
         {/* Checkboxes Legales */}
         <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          
+
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.75rem', lineHeight: 1.4, cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               name="aceptaPoliticas"
               checked={formData.aceptaPoliticas}
               onChange={handleChange}
@@ -142,8 +145,8 @@ const FormScreen = ({ onSubmit }) => {
           </label>
 
           <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.75rem', lineHeight: 1.4, cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               name="aceptaPromociones"
               checked={formData.aceptaPromociones}
               onChange={handleChange}
@@ -158,10 +161,16 @@ const FormScreen = ({ onSubmit }) => {
           <button type="submit" className="btn-primary" style={{ width: '100%' }}>
             Siguiente
           </button>
-          
+
           <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', textAlign: 'justify', marginTop: '1.5rem', lineHeight: 1.4 }}>
             Al registrarte, aceptas los Términos y Condiciones de la promoción. La asignación de premios se realiza mediante un sistema de probabilidades. Promoción válida hasta agotar stock. Aplican restricciones.
           </p>
+
+          <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', paddingBottom: '1rem' }}>
+            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
+              &copy; {new Date().getFullYear()} Electrolux. Todos los derechos reservados.
+            </p>
+          </div>
         </div>
       </form>
     </motion.div>

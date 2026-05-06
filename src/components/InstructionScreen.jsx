@@ -23,8 +23,8 @@ const InstructionScreen = ({ onStart }) => {
           transition={{ delay: 0.2 }}
           style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--color-secondary)', padding: '1rem', borderRadius: '12px' }}
         >
-          <Target color="var(--color-gold)" size={32} />
-          <p style={{ margin: 0, lineHeight: 1.4 }}>Toca el lado <strong>izquierdo o derecho</strong> de la pantalla para mover los guantes a esa dirección.</p>
+          <Target color="var(--color-gold)" size={32} style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, lineHeight: 1.4 }}>Toca el lado <strong>izquierdo o derecho</strong> para mover los guantes. Puedes cambiar de lado durante el conteo.</p>
         </motion.div>
 
         <motion.div 
@@ -33,8 +33,8 @@ const InstructionScreen = ({ onStart }) => {
           transition={{ delay: 0.4 }}
           style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--color-secondary)', padding: '1rem', borderRadius: '12px' }}
         >
-          <ShieldCheck color="var(--color-green)" size={32} />
-          <p style={{ margin: 0, lineHeight: 1.4 }}>Adivina la dirección del balón (son <strong>2 tiros</strong> en total).</p>
+          <ShieldCheck color="var(--color-green)" size={32} style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, lineHeight: 1.4 }}>¡Adivina rápido! Apenas el jugador patee, <strong>tus guantes se bloquearán</strong> en la posición elegida.</p>
         </motion.div>
 
         <motion.div 
@@ -43,8 +43,8 @@ const InstructionScreen = ({ onStart }) => {
           transition={{ delay: 0.6 }}
           style={{ display: 'flex', alignItems: 'center', gap: '1rem', backgroundColor: 'var(--color-secondary)', padding: '1rem', borderRadius: '12px' }}
         >
-          <Trophy color="var(--color-gold)" size={32} />
-          <p style={{ margin: 0, lineHeight: 1.4 }}>Tapa los <strong>2 goles</strong> para ganar el premio mayor. ¡Si no, te llevas el de consolación!</p>
+          <Trophy color="var(--color-gold)" size={32} style={{ flexShrink: 0 }} />
+          <p style={{ margin: 0, lineHeight: 1.4 }}>Son <strong>2 tiros</strong>. ¡Tapa ambos para ganar el Premio Mayor, o llévate el de Consolación!</p>
         </motion.div>
       </div>
 
