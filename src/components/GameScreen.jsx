@@ -6,7 +6,7 @@ const GameScreen = ({ onEnd }) => {
   const [currentShot, setCurrentShot] = useState(1);
   const [saves, setSaves] = useState(0);
   const [results, setResults] = useState([]); // Array of 'save' or 'goal'
-  
+
   const [gameState, setGameState] = useState('IDLE'); // IDLE, COUNTDOWN, SHOOTING, ROUND_RESULT
   const [glovePosition, setGlovePosition] = useState('center'); // left, right, center
   const [ballPosition, setBallPosition] = useState('center'); // left, right, center
@@ -38,12 +38,12 @@ const GameScreen = ({ onEnd }) => {
     setGameState('COUNTDOWN');
     setCountdown(3);
     setMessage('¡Prepárate!');
-    
+
     // Suena el silbato al iniciar la cuenta
     if (whistleAudio.current) {
       whistleAudio.current.currentTime = 0;
       whistleAudio.current.play().catch(e => console.log('Audio error:', e));
-      
+
       // Detenemos el silbato automáticamente después de 800ms (0.8 segundos)
       setTimeout(() => {
         if (whistleAudio.current) {
@@ -56,7 +56,7 @@ const GameScreen = ({ onEnd }) => {
   const handleTouch = (side) => {
     // Bloquear los guantes si ya se pateó el balón o se está mostrando el resultado
     if (gameState === 'ROUND_RESULT' || gameState === 'SHOOTING') return;
-    
+
     setGlovePosition(side);
 
     if (gameState === 'IDLE') {
@@ -87,21 +87,21 @@ const GameScreen = ({ onEnd }) => {
   const evaluateResult = useCallback((actualBallPos) => {
     setGameState('ROUND_RESULT');
     const isSave = glovePosRef.current === actualBallPos;
-    
+
     if (isSave) {
       setSaves(prev => prev + 1);
       setResults(prev => [...prev, 'save']);
       setMessage('¡TAPADÓN!');
       if (winAudio.current) {
         winAudio.current.currentTime = 0;
-        winAudio.current.play().catch(e=>console.log(e));
+        winAudio.current.play().catch(e => console.log(e));
       }
     } else {
       setResults(prev => [...prev, 'goal']);
       setMessage('¡GOL!');
       if (errorAudio.current) {
         errorAudio.current.currentTime = 0;
-        errorAudio.current.play().catch(e=>console.log(e));
+        errorAudio.current.play().catch(e => console.log(e));
       }
     }
 
@@ -120,8 +120,8 @@ const GameScreen = ({ onEnd }) => {
     const targetDir = ghostBallPosRef.current;
 
     setGameState('SHOOTING');
-    setMessage('¡Disparo!'); 
-    
+    setMessage('¡Disparo!');
+
     // Sonido de patada
     if (kickAudio.current) {
       kickAudio.current.currentTime = 0;
@@ -157,20 +157,20 @@ const GameScreen = ({ onEnd }) => {
       const sequence = ['left', 'right', 'center'];
       let index = 0;
       let currentDelay = 700; // Inicia lento
-      const minDelay = 120;   // Velocidad máxima
-      
+      const minDelay = 220;   // Velocidad máxima
+
       const moveBall = () => {
         setGhostBallPos(sequence[index % sequence.length]);
         index++;
-        
+
         // Acelerar reduciendo el retraso en un 20% en cada salto
         if (currentDelay > minDelay) {
           currentDelay = Math.max(minDelay, currentDelay * 0.8);
         }
-        
+
         timerId = setTimeout(moveBall, currentDelay);
       };
-      
+
       // Iniciar el primer movimiento rápido para que comience la secuencia
       timerId = setTimeout(moveBall, 50);
     }
@@ -185,7 +185,7 @@ const GameScreen = ({ onEnd }) => {
           if (results[i] === 'save') bgColor = 'var(--color-green)';
           if (results[i] === 'goal') bgColor = 'var(--color-red)';
           return (
-            <motion.div 
+            <motion.div
               key={i}
               initial={false}
               animate={{ backgroundColor: bgColor }}
@@ -232,7 +232,7 @@ const GameScreen = ({ onEnd }) => {
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="game-screen"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -240,17 +240,17 @@ const GameScreen = ({ onEnd }) => {
       style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}
     >
       {/* Fondo del Estadio */}
-      <img 
-        src="/assets/fondo_estadio.svg" 
-        alt="Fondo Estadio" 
-        style={{ position: 'absolute', top: 0, left: '-20%', width: '140%', height: '100%', objectFit: 'cover', zIndex: 0 }} 
+      <img
+        src="/assets/fondo_estadio.svg"
+        alt="Fondo Estadio"
+        style={{ position: 'absolute', top: 0, left: '-20%', width: '140%', height: '100%', objectFit: 'cover', zIndex: 0 }}
       />
 
       {/* HUD Header */}
-      <div style={{ 
-        padding: 'calc(10px + env(safe-area-inset-top)) 10px 10px 10px', 
-        textAlign: 'center', 
-        zIndex: 10, 
+      <div style={{
+        padding: 'calc(10px + env(safe-area-inset-top)) 10px 10px 10px',
+        textAlign: 'center',
+        zIndex: 10,
         position: 'relative',
         background: 'linear-gradient(to bottom, rgba(2, 18, 38, 0.85) 0%, rgba(2, 18, 38, 0) 100%)',
         display: 'flex',
@@ -259,14 +259,14 @@ const GameScreen = ({ onEnd }) => {
       }}>
         <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 4vw, 1.2rem)', textShadow: '2px 2px 4px rgba(0,0,0,1)' }}>Tiro {currentShot} de {TOTAL_SHOTS}</h3>
         {renderHUD()}
-        <h2 style={{ 
-          color: 'var(--color-gold)', 
-          margin: 0, 
-          minHeight: '60px', 
-          fontSize: (gameState === 'COUNTDOWN' && countdown > 0) ? 'clamp(4rem, 15vw, 6rem)' : 'clamp(1.5rem, 6vw, 2rem)', 
-          textShadow: '3px 3px 8px rgba(0,0,0,1)', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <h2 style={{
+          color: 'var(--color-gold)',
+          margin: 0,
+          minHeight: '60px',
+          fontSize: (gameState === 'COUNTDOWN' && countdown > 0) ? 'clamp(4rem, 15vw, 6rem)' : 'clamp(1.5rem, 6vw, 2rem)',
+          textShadow: '3px 3px 8px rgba(0,0,0,1)',
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           fontWeight: 900
         }}>
@@ -276,7 +276,7 @@ const GameScreen = ({ onEnd }) => {
 
       {/* Game Area */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
-        
+
         {/* Balón Fantasma */}
         <AnimatePresence>
           {gameState === 'COUNTDOWN' && (
@@ -306,36 +306,36 @@ const GameScreen = ({ onEnd }) => {
         </AnimatePresence>
 
         {/* Zonas táctiles */}
-        <div 
+        <div
           onClick={() => handleTouch('left')}
           style={{ position: 'absolute', top: 0, left: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
         >
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>IZQ</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>IZQ</span>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleTouch('center')}
           style={{ position: 'absolute', top: 0, left: '33.3%', width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
         >
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>CEN</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>CEN</span>
           </div>
         </div>
-        <div 
+        <div
           onClick={() => handleTouch('right')}
           style={{ position: 'absolute', top: 0, right: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
         >
           <div style={{ width: '60px', height: '60px', borderRadius: '50%', border: '3px dashed rgba(255,255,255,0.4)', backgroundColor: 'rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-             <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>DER</span>
+            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.7rem', textShadow: '1px 1px 2px black', fontWeight: 'bold' }}>DER</span>
           </div>
         </div>
 
         {/* Pateador */}
         <div style={{ position: 'absolute', top: '15%', left: '0', width: '100%', height: '50%', display: 'flex', justifyContent: 'center', zIndex: 2 }}>
-          <img 
-            src={getKickerImage()} 
-            alt="Pateador" 
+          <img
+            src={getKickerImage()}
+            alt="Pateador"
             style={{ height: '100%', objectFit: 'contain' }}
           />
         </div>
@@ -347,9 +347,9 @@ const GameScreen = ({ onEnd }) => {
             src="/assets/balon.svg"
             initial={{ scale: 0.15, top: '40%', left: '50%', opacity: 1 }}
             animate={getBallAnim()}
-            transition={{ 
-              duration: gameState === 'SHOOTING' ? 0.8 : (gameState === 'ROUND_RESULT' ? 0.3 : 0.4), 
-              ease: gameState === 'SHOOTING' ? "easeIn" : "easeOut" 
+            transition={{
+              duration: gameState === 'SHOOTING' ? 0.8 : (gameState === 'ROUND_RESULT' ? 0.3 : 0.4),
+              ease: gameState === 'SHOOTING' ? "easeIn" : "easeOut"
             }}
             style={{
               position: 'absolute',
@@ -382,10 +382,10 @@ const GameScreen = ({ onEnd }) => {
             zIndex: 5
           }}
         >
-          <img 
-            src="/assets/guantes.svg" 
-            alt="Guantes" 
-            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0px -5px 10px rgba(0,0,0,0.6))' }} 
+          <img
+            src="/assets/guantes.svg"
+            alt="Guantes"
+            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0px -5px 10px rgba(0,0,0,0.6))' }}
           />
         </motion.div>
 
