@@ -366,7 +366,7 @@ const GameScreen = ({ onEnd }) => {
         {/* Guantes */}
         <motion.div
           animate={{
-            x: glovePosition === 'left' ? '-90%' : glovePosition === 'right' ? '90%' : '0%',
+            x: glovePosition === 'left' ? '-40%' : glovePosition === 'right' ? '40%' : '0%',
             y: glovePosition === 'center' ? '20%' : '0%'
           }}
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
