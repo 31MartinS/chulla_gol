@@ -148,7 +148,7 @@ const GameScreen = ({ onEnd }) => {
       const totalMoves = Math.floor(Math.random() * 15) + 15; // 15 a 29 saltos
       let moveCount = 0;
       let currentDelay = 250;
-      const minDelay = 120;
+      const minDelay = 100;
 
       const moveBall = () => {
         const possiblePos = ['left', 'center', 'right'].filter(p => p !== ghostBallPosRef.current);
@@ -430,29 +430,66 @@ const GameScreen = ({ onEnd }) => {
               pointerEvents: 'none'
             }}
           >
-            <motion.div
-              key={`num-${countdown}`}
-              initial={{ scale: 2.2, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.3, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-              style={{
-                fontSize: countdown === 4
-                  ? 'clamp(4rem, 18vw, 7rem)'
-                  : 'clamp(5.5rem, 24vw, 9rem)',
-                fontWeight: 900,
-                lineHeight: 1,
-                color: countdown === 4 ? 'rgba(255, 230, 80, 1)' : '#fff',
-                textShadow: countdown === 4
-                  ? '0 0 30px rgba(255, 200, 0, 1), 0 0 60px rgba(255, 140, 0, 0.7), 0 6px 18px rgba(0,0,0,0.9)'
-                  : '0 0 30px rgba(255, 200, 0, 0.9), 0 0 60px rgba(255, 120, 0, 0.6), 0 6px 18px rgba(0,0,0,0.9)',
-                fontFamily: 'inherit',
-                letterSpacing: countdown === 4 ? '0.05em' : '0',
-                textTransform: 'uppercase'
-              }}
-            >
-              {countdown === 4 ? '¡ELIGE!' : countdown}
-            </motion.div>
+            {countdown === 4 ? (
+              <motion.div
+                key="elige-phrase"
+                initial={{ scale: 1.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.4, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '4px',
+                  textAlign: 'center',
+                  padding: '0 20px'
+                }}
+              >
+                <span style={{
+                  fontSize: 'clamp(3rem, 14vw, 5.5rem)',
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color: 'rgba(255, 230, 80, 1)',
+                  textShadow: '0 0 30px rgba(255, 200, 0, 1), 0 0 60px rgba(255, 140, 0, 0.7), 0 6px 18px rgba(0,0,0,0.9)',
+                  letterSpacing: '0.04em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'inherit'
+                }}>
+                  ¡Elige
+                </span>
+                <span style={{
+                  fontSize: 'clamp(1.4rem, 6vw, 2.4rem)',
+                  fontWeight: 800,
+                  lineHeight: 1.2,
+                  color: 'rgba(255, 210, 60, 0.95)',
+                  textShadow: '0 0 20px rgba(255, 180, 0, 0.9), 0 4px 12px rgba(0,0,0,0.9)',
+                  letterSpacing: '0.02em',
+                  textTransform: 'uppercase',
+                  fontFamily: 'inherit'
+                }}>
+                  dónde irá el balón!
+                </span>
+              </motion.div>
+            ) : (
+              <motion.div
+                key={`num-${countdown}`}
+                initial={{ scale: 2.2, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.3, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                style={{
+                  fontSize: 'clamp(5.5rem, 24vw, 9rem)',
+                  fontWeight: 900,
+                  lineHeight: 1,
+                  color: '#fff',
+                  textShadow: '0 0 30px rgba(255, 200, 0, 0.9), 0 0 60px rgba(255, 120, 0, 0.6), 0 6px 18px rgba(0,0,0,0.9)',
+                  fontFamily: 'inherit'
+                }}
+              >
+                {countdown}
+              </motion.div>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
