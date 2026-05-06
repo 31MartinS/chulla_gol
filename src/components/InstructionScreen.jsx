@@ -16,12 +16,12 @@ const InstructionScreen = ({ onStart }) => {
         <p style={{ color: 'var(--color-accent-teal)', fontSize: '1rem', margin: 0 }}>Ponte los guantes y defiende tu arco</p>
       </div>
 
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }} 
-        animate={{ scale: 1, opacity: 1 }} 
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
         style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0', flexShrink: 0 }}
       >
-        <img src="/assets/hernan.svg" alt="Hernán Galíndez" style={{ maxHeight: '250px', objectFit: 'contain' }} />
+        <img src="/assets/galindez.svg" alt="Hernán Galíndez" style={{ maxHeight: '250px', objectFit: 'contain' }} />
       </motion.div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1rem', flexShrink: 0 }}>

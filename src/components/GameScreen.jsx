@@ -61,6 +61,9 @@ const GameScreen = ({ onEnd }) => {
     ghostBallPosRef.current = ghostBallPos;
   }, [ghostBallPos]);
 
+  // Guarda la última posición real ANTES de ocultar el balón
+  const finalBallPosRef = useRef('center');
+
   const currentShotRef = useRef(currentShot);
   useEffect(() => {
     currentShotRef.current = currentShot;
@@ -103,8 +106,8 @@ const GameScreen = ({ onEnd }) => {
   }, [onEnd, resetRound]);
 
   const shootBall = useCallback(() => {
-    // La dirección del balón es exactamente la última posición del balón fantasma
-    const targetDir = ghostBallPosRef.current;
+    // La dirección es la posición final guardada antes de ocultarse
+    const targetDir = finalBallPosRef.current;
 
     setGameState('SHOOTING');
     setMessage('¡Disparo!');
@@ -150,7 +153,7 @@ const GameScreen = ({ onEnd }) => {
         // Mover a una posición aleatoria diferente a la actual
         const possiblePos = ['left', 'center', 'right'].filter(p => p !== ghostBallPosRef.current);
         const nextPos = possiblePos[Math.floor(Math.random() * possiblePos.length)];
-        
+
         setGhostBallPos(nextPos);
         moveCount++;
 
@@ -162,7 +165,9 @@ const GameScreen = ({ onEnd }) => {
         if (moveCount < totalMoves) {
           timerId = setTimeout(moveBall, currentDelay);
         } else {
-          // Terminar movimiento y esperar un momento
+          // Guardar la última posición real antes de ocultar
+          finalBallPosRef.current = ghostBallPosRef.current;
+          setGhostBallPos('hidden'); // Ocultar el balón al instante
           timerId = setTimeout(() => {
             setGameState('COUNTDOWN');
             setCountdown(3);
@@ -178,7 +183,7 @@ const GameScreen = ({ onEnd }) => {
                 }
               }, 800);
             }
-          }, 400); // 400ms de pausa para que el jugador vea dónde quedó
+          }, 0); // Sin pausa — transición inmediata
         }
       };
 
