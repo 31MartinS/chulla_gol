@@ -372,10 +372,10 @@ const GameScreen = ({ onEnd }) => {
           transition={{ type: 'spring', stiffness: 400, damping: 25 }}
           style={{
             position: 'absolute',
-            bottom: '10%',
-            left: 'calc(50% - 75px)',
-            width: '150px',
-            height: '100px',
+            bottom: '15%',
+            left: 'calc(50% - 110px)',
+            width: '220px',
+            height: '140px',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
