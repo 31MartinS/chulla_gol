@@ -7,12 +7,13 @@ const GameScreen = ({ onEnd, isMuted }) => {
   const [saves, setSaves] = useState(0);
   const [results, setResults] = useState([]); // Array of 'save' or 'goal'
 
-  const [gameState, setGameState] = useState('IDLE'); // IDLE, GHOST_MOVING, COUNTDOWN, SHOOTING, ROUND_RESULT
-  const [glovePosition, setGlovePosition] = useState('center'); // left, right, center
-  const [ballPosition, setBallPosition] = useState('center'); // left, right, center
-  const [countdown, setCountdown] = useState(3);
+  const [gameState, setGameState] = useState('IDLE'); // IDLE, GHOST_MOVING, SHOOTING, ROUND_RESULT
+  const [glovePosition, setGlovePosition] = useState('center');
+  const [ballPosition, setBallPosition] = useState('center');
+  const [timeLeft, setTimeLeft] = useState(5);
+  const [showEligeOverlay, setShowEligeOverlay] = useState(false); // overlay "¡ELIGE!" al inicio
   const [message, setMessage] = useState('Toca la pantalla para empezar');
-  const [ghostBallPos, setGhostBallPos] = useState('center'); // left, center, right
+  const [ghostBallPos, setGhostBallPos] = useState('center');
 
   // Referencias de Audio
   const whistleAudio = useRef(null);
@@ -36,7 +37,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
   const startGhostMoving = useCallback(() => {
     setGameState('GHOST_MOVING');
-    setMessage('¡Atento al balón!');
+    setMessage('¡Mueve los guantes!');
   }, []);
 
   const handleTouch = (side) => {
@@ -44,10 +45,8 @@ const GameScreen = ({ onEnd, isMuted }) => {
       startGhostMoving();
       return;
     }
-
-    // Bloquear los guantes si no estamos en COUNTDOWN
-    if (gameState !== 'COUNTDOWN') return;
-
+    // Solo se pueden mover los guantes durante los 5 segundos activos
+    if (gameState !== 'GHOST_MOVING') return;
     setGlovePosition(side);
   };
 
@@ -129,79 +128,79 @@ const GameScreen = ({ onEnd, isMuted }) => {
     }, 800);
   }, [evaluateResult]);
 
-  useEffect(() => {
-    let timer;
-    if (gameState === 'COUNTDOWN') {
-      if (countdown > 0) {
-        timer = setTimeout(() => setCountdown(prev => prev - 1), 1000);
-      } else {
-        // Ejecutamos en el siguiente ciclo para evitar render en cascada
-        setTimeout(() => {
-          shootBall();
-        }, 0);
-      }
-    }
-    return () => clearTimeout(timer);
-  }, [gameState, countdown, shootBall]);
+  // Ref estable para llamar shootBall desde el effect sin re-ejecutarlo
+  const shootBallRef = useRef(null);
+  useEffect(() => { shootBallRef.current = shootBall; }, [shootBall]);
 
+  // Fase principal: 5 segundos donde el balón se mueve y los guantes se pueden mover
   useEffect(() => {
-    let timerId;
+    let moveTimerId;
+    let countdownInterval;
+    let decoyTimerId;
+    let endTimerId;
+    let hideEligeId;
+
     if (gameState === 'GHOST_MOVING') {
-      const DECOY_MOVES = 3; // Últimos N movimientos son señuelos (pistas falsas)
-      const totalMoves = Math.floor(Math.random() * 15) + 15; // 15 a 29 saltos
-      let moveCount = 0;
-      let currentDelay = 250;
-      const minDelay = 100;
+      const OVERLAY_MS = 1500;      // duración del overlay ¡ELIGE!
+      const GAME_MS    = 5000;      // countdown 5→1 tras el overlay
+      const TOTAL_MS   = OVERLAY_MS + GAME_MS; // 5500ms total
+      const DECOY_BEFORE_MS = 700;
+      let currentDelay = 230;
+      const minDelay = 150;
 
+      // Silbato al inicio
+      if (whistleAudio.current) {
+        whistleAudio.current.muted = isMuted;
+        whistleAudio.current.currentTime = 0;
+        whistleAudio.current.play().catch(e => console.log('Audio error:', e));
+        setTimeout(() => {
+          if (whistleAudio.current) whistleAudio.current.pause();
+        }, 800);
+      }
+
+      // Overlay "¡ELIGE!" — primeros 1.5s; countdown arranca al quitarse
+      setShowEligeOverlay(true);
+      hideEligeId = setTimeout(() => {
+        setShowEligeOverlay(false);
+        setTimeLeft(5);
+        countdownInterval = setInterval(() => {
+          setTimeLeft(prev => Math.max(0, prev - 1));
+        }, 1000);
+      }, OVERLAY_MS);
+
+      // Movimiento continuo del balón (empieza inmediatamente)
       const moveBall = () => {
         const possiblePos = ['left', 'center', 'right'].filter(p => p !== ghostBallPosRef.current);
         const nextPos = possiblePos[Math.floor(Math.random() * possiblePos.length)];
-
         setGhostBallPos(nextPos);
-        moveCount++;
-
-        // Aceleración lineal suave durante la fase normal
-        if (currentDelay > minDelay) {
-          currentDelay -= 10;
-        }
-
-        // ★ Guardar la posición REAL justo ANTES de los movimientos señuelo
-        // Así el balón termina visualmente en un lugar diferente al real
-        if (moveCount === totalMoves - DECOY_MOVES) {
-          finalBallPosRef.current = nextPos;
-        }
-
-        if (moveCount < totalMoves) {
-          // En los últimos movimientos señuelo, ir muy rápido para confundir
-          const delay = moveCount >= totalMoves - DECOY_MOVES ? 75 : currentDelay;
-          timerId = setTimeout(moveBall, delay);
-        } else {
-          // Ocultar el balón — el jugador vio una posición FALSA al final
-          setGhostBallPos('hidden');
-          timerId = setTimeout(() => {
-            setGameState('COUNTDOWN');
-            setCountdown(4); // 4 = muestra "¡ELIGE!", luego 3,2,1
-            setMessage('¡Prepárate!');
-
-            if (whistleAudio.current) {
-              whistleAudio.current.muted = isMuted;
-              whistleAudio.current.currentTime = 0;
-              whistleAudio.current.play().catch(e => console.log('Audio error:', e));
-
-              setTimeout(() => {
-                if (whistleAudio.current) {
-                  whistleAudio.current.pause();
-                }
-              }, 800);
-            }
-          }, 0);
-        }
+        if (currentDelay > minDelay) currentDelay -= 5;
+        moveTimerId = setTimeout(moveBall, currentDelay);
       };
+      moveTimerId = setTimeout(moveBall, 50);
 
-      timerId = setTimeout(moveBall, 50);
+      // ★ Guardar posición REAL antes de los últimos movimientos señuelo
+      decoyTimerId = setTimeout(() => {
+        finalBallPosRef.current = ghostBallPosRef.current;
+      }, TOTAL_MS - DECOY_BEFORE_MS);
+
+      // Fin del tiempo → ocultar balón y disparar
+      endTimerId = setTimeout(() => {
+        clearInterval(countdownInterval);
+        clearTimeout(moveTimerId);
+        setGhostBallPos('hidden');
+        if (shootBallRef.current) shootBallRef.current();
+      }, TOTAL_MS);
     }
-    return () => clearTimeout(timerId);
-  }, [gameState]);
+
+    return () => {
+      clearInterval(countdownInterval);
+      clearTimeout(moveTimerId);
+      clearTimeout(decoyTimerId);
+      clearTimeout(endTimerId);
+      clearTimeout(hideEligeId);
+      setShowEligeOverlay(false);
+    };
+  }, [gameState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderHUD = () => {
     return (
@@ -225,20 +224,34 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
   const getBallAnim = () => {
     const isSave = glovePosition === ballPosition;
+
+    // Mapa de posiciones triangular: centro=arriba, izq/der=abajo
+    const POS = {
+      left: { left: '25%', top: '72%' },
+      center: { left: '50%', top: '30%' },
+      right: { left: '75%', top: '72%' },
+    };
+
     if (gameState === 'IDLE' || gameState === 'GHOST_MOVING' || gameState === 'COUNTDOWN') {
-      return { scale: 0.15, top: '40%', left: '50%', opacity: 1 };
+      return { scale: 0.15, top: '50%', left: '50%', opacity: 1 };
     }
     if (gameState === 'SHOOTING') {
-      return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '16.66%' : ballPosition === 'right' ? '83.33%' : '50%', opacity: 1 };
+      return { scale: 1.5, ...POS[ballPosition], opacity: 1 };
     }
     if (gameState === 'ROUND_RESULT') {
       if (isSave) {
-        return { scale: 1.5, top: '75%', left: ballPosition === 'left' ? '16.66%' : ballPosition === 'right' ? '83.33%' : '50%', opacity: 1 };
+        return { scale: 1.5, ...POS[ballPosition], opacity: 1 };
       } else {
-        return { scale: 3, top: '130%', left: ballPosition === 'left' ? '10%' : ballPosition === 'right' ? '90%' : '50%', opacity: 0 };
+        // Vuela hacia afuera en la dirección de disparo
+        const flyOff = {
+          left: { scale: 3, top: '120%', left: '5%', opacity: 0 },
+          center: { scale: 3, top: '-20%', left: '50%', opacity: 0 },
+          right: { scale: 3, top: '120%', left: '95%', opacity: 0 },
+        };
+        return flyOff[ballPosition];
       }
     }
-    return { scale: 0.15, top: '40%', left: '50%' };
+    return { scale: 0.15, top: '50%', left: '50%' };
   };
 
   // Pateador
@@ -308,11 +321,11 @@ const GameScreen = ({ onEnd, isMuted }) => {
             <motion.img
               key="ghost-ball"
               src="/assets/balon.svg"
-              initial={{ scale: 1.2, top: '75%', left: '50%', opacity: 0 }}
+              initial={{ scale: 1.2, top: '72%', left: '50%', opacity: 0 }}
               animate={{
                 scale: 1.2,
-                top: '75%',
-                left: ghostBallPos === 'left' ? '16.66%' : ghostBallPos === 'right' ? '83.33%' : '50%',
+                top: ghostBallPos === 'center' ? '30%' : '72%',
+                left: ghostBallPos === 'left' ? '25%' : ghostBallPos === 'right' ? '75%' : '50%',
                 opacity: 0.8
               }}
               exit={{ opacity: 0 }}
@@ -324,27 +337,30 @@ const GameScreen = ({ onEnd, isMuted }) => {
                 width: '70px',
                 height: '70px',
                 zIndex: 3,
-                filter: 'drop-shadow(0px 5px 10px rgba(255, 255, 255, 0.8)) hue-rotate(90deg)' // Tinte para distinguirlo del real
+                filter: 'drop-shadow(0px 5px 10px rgba(255, 255, 255, 0.8)) hue-rotate(90deg)'
               }}
             />
           )}
         </AnimatePresence>
 
-        {/* Zonas táctiles invisibles para capturar clicks */}
-        <div onClick={() => handleTouch('left')} style={{ position: 'absolute', top: 0, left: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer' }} />
-        <div onClick={() => handleTouch('center')} style={{ position: 'absolute', top: 0, left: '33.3%', width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer' }} />
-        <div onClick={() => handleTouch('right')} style={{ position: 'absolute', top: 0, right: 0, width: '33.3%', height: '100%', zIndex: 20, cursor: 'pointer' }} />
+        {/* Zonas táctiles — layout triangular: mitad superior=centro, inferior-izq=izq, inferior-der=der */}
+        <div onClick={() => handleTouch('center')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '48%', zIndex: 20, cursor: 'pointer' }} />
+        <div onClick={() => handleTouch('left')} style={{ position: 'absolute', top: '48%', left: 0, width: '50%', height: '52%', zIndex: 20, cursor: 'pointer' }} />
+        <div onClick={() => handleTouch('right')} style={{ position: 'absolute', top: '48%', right: 0, width: '50%', height: '52%', zIndex: 20, cursor: 'pointer' }} />
 
-        {/* Círculos visuales */}
-        <div style={{ position: 'absolute', top: '75%', left: '16.66%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
+        {/* Círculos visuales — layout triangular */}
+        {/* Centro: arriba */}
+        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
+          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>ARRIBA</span>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
+        </div>
+        {/* Izquierda: abajo-izq */}
+        <div style={{ position: 'absolute', top: '72%', left: '25%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
           <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>IZQ</span>
           <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
         </div>
-        <div style={{ position: 'absolute', top: '75%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
-          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>CEN</span>
-          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
-        </div>
-        <div style={{ position: 'absolute', top: '75%', left: '83.33%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
+        {/* Derecha: abajo-der */}
+        <div style={{ position: 'absolute', top: '72%', left: '75%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
           <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>DER</span>
           <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
         </div>
@@ -381,46 +397,50 @@ const GameScreen = ({ onEnd, isMuted }) => {
           />
         </AnimatePresence>
 
-        {/* Guantes */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{
-            top: '75%',
-            left: glovePosition === 'left' ? '16.66%' : glovePosition === 'right' ? '83.33%' : '50%',
-            opacity: (gameState === 'IDLE' || gameState === 'GHOST_MOVING') ? 0 : 1
-          }}
-          transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-          style={{
-            position: 'absolute',
-            marginTop: '-70px',
-            marginLeft: '-110px',
-            width: '220px',
-            height: '140px',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            zIndex: 5,
-            pointerEvents: 'none'
-          }}
-        >
-          <img
-            src="/assets/guantes.svg"
-            alt="Guantes"
-            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0px -5px 10px rgba(0,0,0,0.6))' }}
-          />
-        </motion.div>
+        {/* Guantes — pop instantáneo en la posición tocada, sin slide */}
+        <AnimatePresence>
+          {gameState !== 'IDLE' && (
+            <motion.div
+              key={glovePosition}  // remonta en cada cambio → efecto pop
+              initial={{ scale: 0.45, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.45, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 520, damping: 22 }}
+              style={{
+                position: 'absolute',
+                top: glovePosition === 'center' ? '30%' : '72%',
+                left: glovePosition === 'left' ? '25%' : glovePosition === 'right' ? '75%' : '50%',
+                marginTop: '-70px',
+                marginLeft: '-110px',
+                width: '220px',
+                height: '140px',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                zIndex: 5,
+                pointerEvents: 'none'
+              }}
+            >
+              <img
+                src="/assets/guantes.svg"
+                alt="Guantes"
+                style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0px -5px 10px rgba(0,0,0,0.6))' }}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
 
-      {/* Overlay de Countdown — pantalla completa */}
+      {/* Overlay "¡ELIGE!" — aparece al tocar para empezar */}
       <AnimatePresence>
-        {gameState === 'COUNTDOWN' && countdown > 0 && (
+        {showEligeOverlay && (
           <motion.div
-            key={`countdown-overlay-${countdown}`}
+            key="elige-overlay"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.25 }}
             style={{
               position: 'absolute',
               inset: 0,
@@ -429,71 +449,70 @@ const GameScreen = ({ onEnd, isMuted }) => {
               alignItems: 'center',
               justifyContent: 'center',
               zIndex: 50,
-              background: countdown === 4 ? 'rgba(0, 5, 20, 0.65)' : 'transparent',
-              backdropFilter: countdown === 4 ? 'blur(3px)' : 'none',
+              background: 'rgba(0, 5, 20, 0.65)',
+              backdropFilter: 'blur(3px)',
               pointerEvents: 'none'
             }}
           >
-            {countdown === 4 ? (
-              <motion.div
-                key="elige-phrase"
-                initial={{ scale: 1.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.4, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 280, damping: 18 }}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: '4px',
-                  textAlign: 'center',
-                  padding: '0 20px'
-                }}
-              >
-                <span style={{
-                  fontSize: 'clamp(3rem, 14vw, 5.5rem)',
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  color: 'rgba(255, 230, 80, 1)',
-                  textShadow: '0 0 30px rgba(255, 200, 0, 1), 0 0 60px rgba(255, 140, 0, 0.7), 0 6px 18px rgba(0,0,0,0.9)',
-                  letterSpacing: '0.04em',
-                  textTransform: 'uppercase',
-                  fontFamily: 'inherit'
-                }}>
-                  ¡Elige
-                </span>
-                <span style={{
-                  fontSize: 'clamp(1.4rem, 6vw, 2.4rem)',
-                  fontWeight: 800,
-                  lineHeight: 1.2,
-                  color: 'rgba(255, 210, 60, 0.95)',
-                  textShadow: '0 0 20px rgba(255, 180, 0, 0.9), 0 4px 12px rgba(0,0,0,0.9)',
-                  letterSpacing: '0.02em',
-                  textTransform: 'uppercase',
-                  fontFamily: 'inherit'
-                }}>
-                  dónde irá el balón!
-                </span>
-              </motion.div>
-            ) : (
-              <motion.div
-                key={`num-${countdown}`}
-                initial={{ scale: 2.2, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.3, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 18 }}
-                style={{
-                  fontSize: 'clamp(5.5rem, 24vw, 9rem)',
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  color: '#fff',
-                  textShadow: '0 0 30px rgba(255, 200, 0, 0.9), 0 0 60px rgba(255, 120, 0, 0.6), 0 6px 18px rgba(0,0,0,0.9)',
-                  fontFamily: 'inherit'
-                }}
-              >
-                {countdown}
-              </motion.div>
-            )}
+            <motion.div
+              initial={{ scale: 1.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', textAlign: 'center', padding: '0 20px' }}
+            >
+              <span style={{
+                fontSize: 'clamp(3rem, 14vw, 5.5rem)', fontWeight: 900, lineHeight: 1,
+                color: 'rgba(255, 230, 80, 1)',
+                textShadow: '0 0 30px rgba(255, 200, 0, 1), 0 0 60px rgba(255, 140, 0, 0.7), 0 6px 18px rgba(0,0,0,0.9)',
+                letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: 'inherit'
+              }}>
+                ¡Elige
+              </span>
+              <span style={{
+                fontSize: 'clamp(1.4rem, 6vw, 2.4rem)', fontWeight: 800, lineHeight: 1.2,
+                color: 'rgba(255, 210, 60, 0.95)',
+                textShadow: '0 0 20px rgba(255, 180, 0, 0.9), 0 4px 12px rgba(0,0,0,0.9)',
+                letterSpacing: '0.02em', textTransform: 'uppercase', fontFamily: 'inherit'
+              }}>
+                dónde irá el balón!
+              </span>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Contador de tiempo — flota sin oscurecer, zoom por cada segundo */}
+      <AnimatePresence mode="wait">
+        {gameState === 'GHOST_MOVING' && !showEligeOverlay && timeLeft > 0 && (
+          <motion.div
+            key={`timer-${timeLeft}`}
+            initial={{ scale: 2.0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.4, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 20 }}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              paddingTop: '18%',
+              zIndex: 30,
+              pointerEvents: 'none'
+            }}
+          >
+            <span style={{
+              fontSize: 'clamp(5rem, 22vw, 9rem)',
+              fontWeight: 900,
+              lineHeight: 1,
+              color: timeLeft <= 2 ? 'rgba(255, 100, 60, 1)' : '#fff',
+              textShadow: timeLeft <= 2
+                ? '0 0 30px rgba(255, 60, 0, 1), 0 0 70px rgba(255, 30, 0, 0.8), 0 8px 24px rgba(0,0,0,0.9)'
+                : '0 0 30px rgba(255, 200, 0, 0.9), 0 0 60px rgba(255, 120, 0, 0.6), 0 8px 24px rgba(0,0,0,0.9)',
+              fontFamily: 'inherit'
+            }}>
+              {timeLeft}
+            </span>
           </motion.div>
         )}
       </AnimatePresence>
