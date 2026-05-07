@@ -145,8 +145,8 @@ const GameScreen = ({ onEnd, isMuted }) => {
       const GAME_MS    = 5000;      // countdown 5→1 tras el overlay
       const TOTAL_MS   = OVERLAY_MS + GAME_MS; // 5500ms total
       const DECOY_BEFORE_MS = 700;
-      let currentDelay = 230;
-      const minDelay = 150;
+      let currentDelay = 400; // ms entre movimientos al inicio (más lento)
+      const minDelay = 280;    // velocidad máxima (más controlada)
 
       // Silbato al inicio
       if (whistleAudio.current) {
