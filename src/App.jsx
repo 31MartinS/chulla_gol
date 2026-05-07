@@ -23,6 +23,15 @@ function App() {
   // Audio Reference
   const bgMusicRef = useRef(null);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+
+  const toggleMute = () => {
+    setIsMuted(prev => {
+      const next = !prev;
+      if (bgMusicRef.current) bgMusicRef.current.muted = next;
+      return next;
+    });
+  };
 
   useEffect(() => {
     const startAudio = () => {
@@ -82,7 +91,36 @@ function App() {
     <div className="mobile-container">
       {/* Música de fondo global */}
       <audio ref={bgMusicRef} src="/sounds/soccer.mp3" loop />
-      
+
+      {/* Botón de mute global */}
+      <button
+        onClick={toggleMute}
+        aria-label={isMuted ? 'Activar sonido' : 'Silenciar'}
+        style={{
+          position: 'fixed',
+          top: 'calc(12px + env(safe-area-inset-top))',
+          right: '14px',
+          zIndex: 200,
+          background: 'rgba(0,0,0,0.45)',
+          border: '1.5px solid rgba(255,255,255,0.25)',
+          borderRadius: '50%',
+          width: '40px',
+          height: '40px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          cursor: 'pointer',
+          backdropFilter: 'blur(6px)',
+          fontSize: '1.2rem',
+          transition: 'background 0.2s, transform 0.15s',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.5)'
+        }}
+        onPointerDown={e => e.currentTarget.style.transform = 'scale(0.88)'}
+        onPointerUp={e => e.currentTarget.style.transform = 'scale(1)'}
+      >
+        {isMuted ? '🔇' : '🔊'}
+      </button>
+
       <AnimatePresence mode="wait">
         {currentScreen === SCREENS.SPLASH && (
           <SplashScreen key="splash" onStart={handleSplashEnd} />
@@ -94,7 +132,7 @@ function App() {
           <InstructionScreen key="instructions" onStart={handleStartGame} />
         )}
         {currentScreen === SCREENS.GAME && (
-          <GameScreen key="game" onEnd={handleGameEnd} />
+          <GameScreen key="game" onEnd={handleGameEnd} isMuted={isMuted} />
         )}
         {currentScreen === SCREENS.RESULTS && (
           <ResultScreen key="results" result={gameResult} onRestart={handleRestart} />

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const GameScreen = ({ onEnd }) => {
+const GameScreen = ({ onEnd, isMuted }) => {
   const TOTAL_SHOTS = 2;
   const [currentShot, setCurrentShot] = useState(1);
   const [saves, setSaves] = useState(0);
@@ -83,6 +83,7 @@ const GameScreen = ({ onEnd }) => {
       setResults(prev => [...prev, 'save']);
       setMessage('¡TAPADÓN!');
       if (winAudio.current) {
+        winAudio.current.muted = isMuted;
         winAudio.current.currentTime = 0;
         winAudio.current.play().catch(e => console.log(e));
       }
@@ -90,6 +91,7 @@ const GameScreen = ({ onEnd }) => {
       setResults(prev => [...prev, 'goal']);
       setMessage('¡GOL!');
       if (errorAudio.current) {
+        errorAudio.current.muted = isMuted;
         errorAudio.current.currentTime = 0;
         errorAudio.current.play().catch(e => console.log(e));
       }
@@ -114,6 +116,7 @@ const GameScreen = ({ onEnd }) => {
 
     // Sonido de patada
     if (kickAudio.current) {
+      kickAudio.current.muted = isMuted;
       kickAudio.current.currentTime = 0;
       kickAudio.current.play().catch(e => console.log('Audio error:', e));
     }
@@ -181,6 +184,7 @@ const GameScreen = ({ onEnd }) => {
             setMessage('¡Prepárate!');
 
             if (whistleAudio.current) {
+              whistleAudio.current.muted = isMuted;
               whistleAudio.current.currentTime = 0;
               whistleAudio.current.play().catch(e => console.log('Audio error:', e));
 
