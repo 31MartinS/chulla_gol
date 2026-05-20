@@ -1,6 +1,29 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+const DEFAULT_GLOVE_POSITION = { x: 50, y: 50 };
+const TARGET_ZONES = {
+  left: { x: 25, y: 72 },
+  center: { x: 50, y: 30 },
+  right: { x: 75, y: 72 },
+};
+const GLOVE_HIT_RADIUS = 12;
+
+const createDefaultGlovePosition = () => ({ ...DEFAULT_GLOVE_POSITION });
+
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+const getDistance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+const getGloveHitZone = (position) => {
+  const matchingZones = Object.entries(TARGET_ZONES)
+    .map(([zone, zonePosition]) => ({ zone, distance: getDistance(position, zonePosition) }))
+    .filter(({ distance }) => distance <= GLOVE_HIT_RADIUS)
+    .sort((a, b) => a.distance - b.distance);
+
+  return matchingZones[0]?.zone ?? null;
+};
+
 const GameScreen = ({ onEnd, isMuted }) => {
   const TOTAL_SHOTS = 2;
   const [currentShot, setCurrentShot] = useState(1);
@@ -8,12 +31,15 @@ const GameScreen = ({ onEnd, isMuted }) => {
   const [results, setResults] = useState([]); // Array of 'save' or 'goal'
 
   const [gameState, setGameState] = useState('IDLE'); // IDLE, GHOST_MOVING, SHOOTING, ROUND_RESULT
-  const [glovePosition, setGlovePosition] = useState('center');
+  const [glovePosition, setGlovePosition] = useState(createDefaultGlovePosition);
   const [ballPosition, setBallPosition] = useState('center');
   const [timeLeft, setTimeLeft] = useState(5);
   const [showEligeOverlay, setShowEligeOverlay] = useState(false); // overlay "¡ELIGE!" al inicio
   const [message, setMessage] = useState('Toca la pantalla para empezar');
   const [ghostBallPos, setGhostBallPos] = useState('center');
+
+  const gameAreaRef = useRef(null);
+  const pointerActiveRef = useRef(false);
 
   // Referencias de Audio
   const whistleAudio = useRef(null);
@@ -30,25 +56,71 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
   const resetRound = useCallback(() => {
     setGameState('IDLE');
-    setGlovePosition('center');
+    setGlovePosition(createDefaultGlovePosition());
     setBallPosition('center');
     setMessage('Toca la pantalla para empezar');
+    pointerActiveRef.current = false;
   }, []);
 
   const startGhostMoving = useCallback(() => {
     setGameState('GHOST_MOVING');
     setMessage('¡Mueve los guantes!');
+    setGlovePosition(createDefaultGlovePosition());
   }, []);
 
-  const handleTouch = (side) => {
+  const updateGlovePositionFromPointer = useCallback((clientX, clientY) => {
+    const gameArea = gameAreaRef.current;
+    if (!gameArea) return;
+
+    const rect = gameArea.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const nextPosition = {
+      x: clamp(((clientX - rect.left) / rect.width) * 100, 0, 100),
+      y: clamp(((clientY - rect.top) / rect.height) * 100, 0, 100),
+    };
+
+    setGlovePosition(nextPosition);
+  }, []);
+
+  const handleGamePointerMove = useCallback((event) => {
+    if (gameState !== 'GHOST_MOVING') return;
+    if (event.pointerType !== 'mouse' && !pointerActiveRef.current) return;
+
+    updateGlovePositionFromPointer(event.clientX, event.clientY);
+  }, [gameState, updateGlovePositionFromPointer]);
+
+  const handleGamePointerDown = useCallback((event) => {
     if (gameState === 'IDLE') {
       startGhostMoving();
-      return;
     }
-    // Solo se pueden mover los guantes durante los 5 segundos activos
-    if (gameState !== 'GHOST_MOVING') return;
-    setGlovePosition(side);
-  };
+
+    if (gameState !== 'GHOST_MOVING' && gameState !== 'IDLE') return;
+
+    pointerActiveRef.current = true;
+    updateGlovePositionFromPointer(event.clientX, event.clientY);
+
+    if (event.currentTarget.setPointerCapture) {
+      event.currentTarget.setPointerCapture(event.pointerId);
+    }
+  }, [gameState, startGhostMoving, updateGlovePositionFromPointer]);
+
+  const handleGamePointerUp = useCallback((event) => {
+    pointerActiveRef.current = false;
+
+    if (event.currentTarget.releasePointerCapture) {
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch (error) {
+        void error;
+      }
+    }
+  }, []);
+
+  const handleGamePointerLeave = useCallback((event) => {
+    if (event.pointerType === 'mouse') return;
+    pointerActiveRef.current = false;
+  }, []);
 
   const glovePosRef = useRef(glovePosition);
   useEffect(() => {
@@ -75,7 +147,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
   const evaluateResult = useCallback((actualBallPos) => {
     setGameState('ROUND_RESULT');
-    const isSave = glovePosRef.current === actualBallPos;
+    const isSave = getGloveHitZone(glovePosRef.current) === actualBallPos;
 
     if (isSave) {
       setSaves(prev => prev + 1);
@@ -223,7 +295,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
   };
 
   const getBallAnim = () => {
-    const isSave = glovePosition === ballPosition;
+    const isSave = getGloveHitZone(glovePosition) === ballPosition;
 
     // Mapa de posiciones triangular: centro=arriba, izq/der=abajo
     const POS = {
@@ -263,7 +335,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
       return '/assets/pateador_patea.svg';
     }
     if (gameState === 'ROUND_RESULT') {
-      const isSave = glovePosition === ballPosition;
+      const isSave = getGloveHitZone(glovePosition) === ballPosition;
       return isSave ? '/assets/pateador_fallo.svg' : '/assets/pateador_gol.svg';
     }
     return '/assets/pateador_inicio.svg';
@@ -313,7 +385,15 @@ const GameScreen = ({ onEnd, isMuted }) => {
       </div>
 
       {/* Game Area */}
-      <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+      <div
+        ref={gameAreaRef}
+        onPointerMove={handleGamePointerMove}
+        onPointerDown={handleGamePointerDown}
+        onPointerUp={handleGamePointerUp}
+        onPointerCancel={handleGamePointerUp}
+        onPointerLeave={handleGamePointerLeave}
+        style={{ flex: 1, position: 'relative', overflow: 'hidden', touchAction: 'none', cursor: gameState === 'GHOST_MOVING' ? 'none' : 'default' }}
+      >
 
         {/* Balón Fantasma */}
         <AnimatePresence>
@@ -342,11 +422,6 @@ const GameScreen = ({ onEnd, isMuted }) => {
             />
           )}
         </AnimatePresence>
-
-        {/* Zonas táctiles — layout triangular: mitad superior=centro, inferior-izq=izq, inferior-der=der */}
-        <div onClick={() => handleTouch('center')} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '48%', zIndex: 20, cursor: 'pointer' }} />
-        <div onClick={() => handleTouch('left')} style={{ position: 'absolute', top: '48%', left: 0, width: '50%', height: '52%', zIndex: 20, cursor: 'pointer' }} />
-        <div onClick={() => handleTouch('right')} style={{ position: 'absolute', top: '48%', right: 0, width: '50%', height: '52%', zIndex: 20, cursor: 'pointer' }} />
 
         {/* Círculos visuales — layout triangular */}
         {/* Centro: arriba */}
@@ -401,17 +476,15 @@ const GameScreen = ({ onEnd, isMuted }) => {
         <AnimatePresence>
           {gameState !== 'IDLE' && (
             <motion.div
-              key={glovePosition}  // remonta en cada cambio → efecto pop
               initial={{ scale: 0.45, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.45, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 520, damping: 22 }}
               style={{
                 position: 'absolute',
-                top: glovePosition === 'center' ? '30%' : '72%',
-                left: glovePosition === 'left' ? '25%' : glovePosition === 'right' ? '75%' : '50%',
-                marginTop: '-70px',
-                marginLeft: '-110px',
+                top: `${glovePosition.y}%`,
+                left: `${glovePosition.x}%`,
+                transform: 'translate(-50%, -50%)',
                 width: '220px',
                 height: '140px',
                 display: 'flex',
