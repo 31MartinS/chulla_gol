@@ -57,7 +57,15 @@ const InstructionScreen = ({ onStart }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, x: -50 }}
       transition={{ duration: 0.3 }}
-      style={{ padding: '1rem', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto', justifyContent: 'flex-start' }}
+      style={{ 
+        padding: '1rem 1rem calc(1rem + env(safe-area-inset-bottom))', 
+        display: 'flex', 
+        flexDirection: 'column', 
+        height: '100%', 
+        overflowY: 'auto', 
+        justifyContent: 'flex-start',
+        paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))'
+      }}
     >
       {/* Encabezado principal */}
       <motion.div 
@@ -202,7 +210,6 @@ const InstructionScreen = ({ onStart }) => {
         </motion.button>
       </div>
 
-      {/* Botón principal */}
       <motion.button
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -213,15 +220,15 @@ const InstructionScreen = ({ onStart }) => {
         className="btn-primary"
         style={{ 
           width: '100%', 
-          marginTop: 'auto', 
-          marginBottom: '1.5rem', 
+          marginTop: '1rem', 
+          marginBottom: '1rem',
           flexShrink: 0,
           fontWeight: 'bold',
           fontSize: '1.05rem',
           padding: '0.9rem'
         }}
       >
-        ¡Listo! A atajadas →
+        ¡A JUGAR! →
       </motion.button>
     </motion.div>
   );

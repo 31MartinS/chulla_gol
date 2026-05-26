@@ -76,9 +76,13 @@ const GameScreen = ({ onEnd, isMuted }) => {
     const rect = gameArea.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
+    // Calcular posición relative al elemento, considerando el viewport y scroll
+    let x = clientX - rect.left;
+    let y = clientY - rect.top;
+
     const nextPosition = {
-      x: clamp(((clientX - rect.left) / rect.width) * 100, 0, 100),
-      y: clamp(((clientY - rect.top) / rect.height) * 100, 0, 100),
+      x: clamp((x / rect.width) * 100, 0, 100),
+      y: clamp((y / rect.height) * 100, 0, 100),
     };
 
     setGlovePosition(nextPosition);
@@ -88,7 +92,11 @@ const GameScreen = ({ onEnd, isMuted }) => {
     if (gameState !== 'GHOST_MOVING') return;
     if (event.pointerType !== 'mouse' && !pointerActiveRef.current) return;
 
-    updateGlovePositionFromPointer(event.clientX, event.clientY);
+    // Para touch events, obtener la coordenada del primer toque
+    const clientX = event.touches?.[0]?.clientX ?? event.clientX;
+    const clientY = event.touches?.[0]?.clientY ?? event.clientY;
+
+    updateGlovePositionFromPointer(clientX, clientY);
   }, [gameState, updateGlovePositionFromPointer]);
 
   const handleGamePointerDown = useCallback((event) => {
@@ -99,7 +107,12 @@ const GameScreen = ({ onEnd, isMuted }) => {
     if (gameState !== 'GHOST_MOVING' && gameState !== 'IDLE') return;
 
     pointerActiveRef.current = true;
-    updateGlovePositionFromPointer(event.clientX, event.clientY);
+
+    // Para touch events, obtener la coordenada del primer toque
+    const clientX = event.touches?.[0]?.clientX ?? event.clientX;
+    const clientY = event.touches?.[0]?.clientY ?? event.clientY;
+
+    updateGlovePositionFromPointer(clientX, clientY);
 
     if (event.currentTarget.setPointerCapture) {
       event.currentTarget.setPointerCapture(event.pointerId);
