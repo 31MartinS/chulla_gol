@@ -7,8 +7,8 @@ const TARGET_ZONES = {
   center: { x: 50, y: 30 },
   right: { x: 75, y: 72 },
 };
-const GLOVE_HIT_RADIUS = 20; // Aumentado de 12 a 20 para mejor detección
-const GLOVE_VISUAL_OFFSET = { x: 0, y: 0 }; // Removido offset visual - los guantes van donde el usuario toca
+// Radio de detección en porcentaje de pantalla (muy generoso para mobile)
+const GLOVE_HIT_RADIUS = 18;
 
 const createDefaultGlovePosition = () => ({ ...DEFAULT_GLOVE_POSITION });
 
@@ -16,9 +16,13 @@ const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
 const getDistance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
+// Verifica si el glove está en una zona objetivo
 const getGloveHitZone = (position) => {
   const matchingZones = Object.entries(TARGET_ZONES)
-    .map(([zone, zonePosition]) => ({ zone, distance: getDistance(position, zonePosition) }))
+    .map(([zone, zonePosition]) => {
+      const distance = getDistance(position, zonePosition);
+      return { zone, distance, zonePosition };
+    })
     .filter(({ distance }) => distance <= GLOVE_HIT_RADIUS)
     .sort((a, b) => a.distance - b.distance);
 
@@ -74,39 +78,34 @@ const GameScreen = ({ onEnd, isMuted }) => {
     if (!gameArea) return;
 
     const rect = gameArea.getBoundingClientRect();
-    if (!rect.width || !rect.height) return;
+    if (!rect.width || !rect.height) {
+      console.warn('Game area has no dimensions');
+      return;
+    }
 
-    // Calcular posición relativa al elemento, siendo más cuidadoso con el viewport
-    // En mobile, clientX/Y ya incluye todo lo necesario
-    const x = clientX - rect.left;
-    const y = clientY - rect.top;
+    // Calcular posición relativa al gameArea en pixels
+    let relativeX = clientX - rect.left;
+    let relativeY = clientY - rect.top;
 
+    // Convertir a porcentaje (0-100)
+    const percentX = (relativeX / rect.width) * 100;
+    const percentY = (relativeY / rect.height) * 100;
+
+    // Clampar para asegurar que esté dentro de los límites
     const nextPosition = {
-      x: clamp((x / rect.width) * 100, 0, 100),
-      y: clamp((y / rect.height) * 100, 0, 100),
+      x: clamp(percentX, 0, 100),
+      y: clamp(percentY, 0, 100),
     };
-
-    // Debug
-    console.log('getBoundingClientRect:', { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
-    console.log('Touch coords:', { clientX, clientY });
-    console.log('Relative coords:', { x, y });
-    console.log('Percentage position:', nextPosition);
 
     setGlovePosition(nextPosition);
   }, []);
 
   const handleGamePointerMove = useCallback((event) => {
     if (gameState !== 'GHOST_MOVING') return;
-    
-    // Permitir mouse siempre, touch solo si está activo (pointerDown fue llamado)
-    const isTouch = event.pointerType === 'touch' || event.pointerType === 'pen';
-    if (isTouch && !pointerActiveRef.current) return;
 
-    // Para touch events, obtener la coordenada del primer toque
-    const clientX = event.touches?.[0]?.clientX ?? event.clientX;
-    const clientY = event.touches?.[0]?.clientY ?? event.clientY;
-
-    updateGlovePositionFromPointer(clientX, clientY);
+    // Para pointer events, usar directamente los valores del evento
+    // clientX y clientY funcionan tanto para touch como para mouse
+    updateGlovePositionFromPointer(event.clientX, event.clientY);
   }, [gameState, updateGlovePositionFromPointer]);
 
   const handleGamePointerDown = useCallback((event) => {
@@ -116,14 +115,13 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
     if (gameState !== 'GHOST_MOVING' && gameState !== 'IDLE') return;
 
+    // Marcar que hay un pointer activo
     pointerActiveRef.current = true;
 
-    // Para touch events, obtener la coordenada del primer toque
-    const clientX = event.touches?.[0]?.clientX ?? event.clientX;
-    const clientY = event.touches?.[0]?.clientY ?? event.clientY;
+    // Actualizar posición inmediatamente
+    updateGlovePositionFromPointer(event.clientX, event.clientY);
 
-    updateGlovePositionFromPointer(clientX, clientY);
-
+    // Capturar el pointer para seguir movimientos incluso fuera del elemento
     if (event.currentTarget.setPointerCapture) {
       event.currentTarget.setPointerCapture(event.pointerId);
     }
@@ -173,12 +171,6 @@ const GameScreen = ({ onEnd, isMuted }) => {
     setGameState('ROUND_RESULT');
     const detectedZone = getGloveHitZone(glovePosRef.current);
     const isSave = detectedZone === actualBallPos;
-
-    console.log('EVALUATING RESULT:');
-    console.log('Glove position:', glovePosRef.current);
-    console.log('Detected zone:', detectedZone);
-    console.log('Actual ball position:', actualBallPos);
-    console.log('Is save?:', isSave);
 
     if (isSave) {
       setSaves(prev => prev + 1);
@@ -389,7 +381,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
       {/* HUD Header */}
       <div style={{
-        padding: 'calc(10px + env(safe-area-inset-top)) 10px 10px 10px',
+        padding: 'calc(10px + env(safe-area-inset-top)) 0 10px 0',
         textAlign: 'center',
         zIndex: 10,
         position: 'relative',
@@ -398,8 +390,10 @@ const GameScreen = ({ onEnd, isMuted }) => {
         flexDirection: 'column',
         alignItems: 'center'
       }}>
-        <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 4vw, 1.2rem)', textShadow: '2px 2px 4px rgba(0,0,0,1)' }}>Tiro {currentShot} de {TOTAL_SHOTS}</h3>
-        {renderHUD()}
+        <div style={{ paddingLeft: '10px', paddingRight: '10px' }}>
+          <h3 style={{ margin: 0, fontSize: 'clamp(1rem, 4vw, 1.2rem)', textShadow: '2px 2px 4px rgba(0,0,0,1)' }}>Tiro {currentShot} de {TOTAL_SHOTS}</h3>
+          {renderHUD()}
+        </div>
         <h2 style={{
           color: 'var(--color-gold)',
           margin: 0,
@@ -409,7 +403,10 @@ const GameScreen = ({ onEnd, isMuted }) => {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontWeight: 900
+          fontWeight: 900,
+          width: '100%',
+          paddingLeft: '10px',
+          paddingRight: '10px'
         }}>
           {message}
         </h2>
@@ -454,21 +451,24 @@ const GameScreen = ({ onEnd, isMuted }) => {
           )}
         </AnimatePresence>
 
-        {/* Círculos visuales — layout triangular */}
+        {/* Círculos visuales — layout triangular con radio de detección */}
         {/* Centro: arriba */}
-        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
-          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>ARRIBA</span>
-          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
+        <div style={{ position: 'absolute', top: '30%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2, pointerEvents: 'none' }}>
+          <div style={{ width: `${GLOVE_HIT_RADIUS * 2}%`, aspectRatio: '1', borderRadius: '50%', border: '2px solid rgba(0, 217, 255, 0.3)', backgroundColor: 'rgba(0, 217, 255, 0.05)', position: 'relative', left: '-50%', top: '-50%' }}></div>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)', position: 'absolute', left: '-35px', top: '-35px' }}></div>
+          <span style={{ position: 'absolute', top: '-45px', left: '-50px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>ARRIBA</span>
         </div>
         {/* Izquierda: abajo-izq */}
-        <div style={{ position: 'absolute', top: '72%', left: '25%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
-          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>IZQ</span>
-          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
+        <div style={{ position: 'absolute', top: '72%', left: '25%', transform: 'translate(-50%, -50%)', zIndex: 2, pointerEvents: 'none' }}>
+          <div style={{ width: `${GLOVE_HIT_RADIUS * 2}%`, aspectRatio: '1', borderRadius: '50%', border: '2px solid rgba(0, 217, 255, 0.3)', backgroundColor: 'rgba(0, 217, 255, 0.05)', position: 'relative', left: '-50%', top: '-50%' }}></div>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)', position: 'absolute', left: '-35px', top: '-35px' }}></div>
+          <span style={{ position: 'absolute', top: '-45px', left: '-50px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>IZQ</span>
         </div>
         {/* Derecha: abajo-der */}
-        <div style={{ position: 'absolute', top: '72%', left: '75%', transform: 'translate(-50%, -50%)', display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 2, pointerEvents: 'none' }}>
-          <span style={{ position: 'absolute', top: '-35px', color: 'rgba(255,255,255,0.8)', fontSize: '1.2rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>DER</span>
-          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)' }}></div>
+        <div style={{ position: 'absolute', top: '72%', left: '75%', transform: 'translate(-50%, -50%)', zIndex: 2, pointerEvents: 'none' }}>
+          <div style={{ width: `${GLOVE_HIT_RADIUS * 2}%`, aspectRatio: '1', borderRadius: '50%', border: '2px solid rgba(0, 217, 255, 0.3)', backgroundColor: 'rgba(0, 217, 255, 0.05)', position: 'relative', left: '-50%', top: '-50%' }}></div>
+          <div style={{ width: '70px', height: '70px', borderRadius: '50%', border: '4px dashed rgba(255,255,255,0.5)', backgroundColor: 'rgba(255,255,255,0.05)', position: 'absolute', left: '-35px', top: '-35px' }}></div>
+          <span style={{ position: 'absolute', top: '-45px', left: '-50px', color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem', textShadow: '2px 2px 4px black', fontWeight: 'bold' }}>DER</span>
         </div>
 
         {/* Pateador */}
@@ -505,32 +505,40 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
         {/* Guantes — pop instantáneo en la posición tocada, sin slide */}
         <AnimatePresence>
-          {gameState !== 'IDLE' && (
-            <motion.div
-              initial={{ scale: 0.45, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.45, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 520, damping: 22 }}
-              style={{
-                position: 'absolute',
-                top: `${glovePosition.y}%`,
-                left: `${glovePosition.x}%`,
-                transform: `translate(calc(-50% + ${GLOVE_VISUAL_OFFSET.x}px), calc(-50% + ${GLOVE_VISUAL_OFFSET.y}px))`,
-                width: '220px',
-                height: '140px',
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                zIndex: 5,
-                pointerEvents: 'none'
-              }}
-            >
-              <img
-                src="/assets/guantes.svg"
-                alt="Guantes"
-                style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0px -5px 10px rgba(0,0,0,0.6))' }}
-              />
-            </motion.div>
+          {(
+            <>
+              <motion.div
+                initial={{ scale: 0.45, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.45, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 520, damping: 22 }}
+                style={{
+                  position: 'absolute',
+                  top: `${glovePosition.y}%`,
+                  left: `${glovePosition.x}%`,
+                  transform: 'translate(-50%, -50%)',
+                  width: '0px',
+                  height: '0px',
+                  zIndex: 5,
+                  pointerEvents: 'none'
+                }}
+              >
+                <img
+                  src="/assets/guantes.svg"
+                  alt="Guantes"
+                  style={{ 
+                    width: '220px', 
+                    height: '140px',
+                    position: 'absolute',
+                    left: '-110px',
+                    top: '-70px',
+                    objectFit: 'contain',
+                    filter: 'drop-shadow(0px -5px 10px rgba(0,0,0,0.6))',
+                    display: 'block'
+                  }}
+                />
+              </motion.div>
+            </>
           )}
         </AnimatePresence>
 
@@ -570,7 +578,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
                 textShadow: '0 0 30px rgba(255, 200, 0, 1), 0 0 60px rgba(255, 140, 0, 0.7), 0 6px 18px rgba(0,0,0,0.9)',
                 letterSpacing: '0.04em', textTransform: 'uppercase', fontFamily: 'inherit'
               }}>
-                ¡Elige
+                ¡Arrastra!
               </span>
               <span style={{
                 fontSize: 'clamp(1.4rem, 6vw, 2.4rem)', fontWeight: 800, lineHeight: 1.2,
@@ -578,7 +586,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
                 textShadow: '0 0 20px rgba(255, 180, 0, 0.9), 0 4px 12px rgba(0,0,0,0.9)',
                 letterSpacing: '0.02em', textTransform: 'uppercase', fontFamily: 'inherit'
               }}>
-                dónde irá el balón!
+                los guantes al balón
               </span>
             </motion.div>
           </motion.div>

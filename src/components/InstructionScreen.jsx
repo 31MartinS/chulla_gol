@@ -9,40 +9,29 @@ const InstructionScreen = ({ onStart }) => {
     {
       icon: MousePointer2,
       color: 'var(--color-gold)',
-      title: 'MUEVE TU DEDO EN LA CANCHA',
+      title: 'PON A PRUEBA TU AGILIDAD VISUAL',
       sections: [
-        { label: '👆 Arrastra:', text: 'Desliza tu dedo por la pantalla para mover los guantes donde quieras.' },
-        { label: '✋ Suelta:', text: 'Cuando sueltes el dedo, esa será tu posición de atajada para ese tiro.' }
+        { label: 'Desliza tu dedo', text: 'por la pantalla para mover los guantes' },
+        { label: 'Cuando sueltes el dedo', text: 'esa será tu posición de atajada donde atraparás el tiro' }
       ]
     },
     {
-      icon: Zap,
+      icon: Target,
       color: '#00D9FF',
-      title: 'EL JUEGO EN ACCIÓN',
+      title: 'MISIÓN',
       sections: [
-        { label: '👁️ Verás un conteo:', text: 'Un balón fantasma se moverá a través de la cancha mostrando dónde viene el tiro.' },
-        { label: '🎯 Tu misión:', text: 'Coloca los guantes EXACTAMENTE donde crees que saldrá el disparo. Solo posicionamiento, sin botones.' },
-        { label: '⏱️ Tiempo crucial:', text: 'Tienes el tiempo del conteo para posicionar correctamente. Donde los dejes cuando termine, ahí atajarás.' }
+        { label: 'Tu objetivo:', text: 'Coloca los guantes exactamente donde crees que irá el balón antes de que termine el tiempo' },
+        { label: '', text: '' }
       ]
     },
     {
       icon: Trophy,
       color: 'var(--color-gold)',
-      title: 'CÓMO GANAR PREMIOS',
+      title: 'PREMIOS',
       sections: [
-        { label: '⚽ Dos tiros totales:', text: 'Enfrentarás 2 disparos diferentes durante el juego.' },
-        { label: '✅ Un acierto = Una atajada:', text: 'Cada balón que detengas cuenta como un acierto.' },
-        { label: '🎁 Tu premio depende de ti:', text: 'Mientras más atajadas logres, mejor es tu recompensa. ¿Serás imparable?' }
-      ]
-    },
-    {
-      icon: HandMetal,
-      color: '#00D9FF',
-      title: 'TIPS PARA GANAR',
-      sections: [
-        { label: '👁️ Observa el balón:', text: 'Sigue el movimiento del balón fantasma para predecir dónde irá el tiro real.' },
-        { label: '⚡ Sé rápido pero preciso:', text: 'No necesitas ser perfecto, pero cuanto más cerca estés del balón, mejor.' },
-        { label: '🔄 No te muevas al final:', text: 'Evita mover los guantes en el último segundo. Mantén la posición que elegiste.' }
+        { label: '👕 Dos atajadas:', text: '1 camiseta para apoyar a la selección' },
+        { label: '⚽ Una atajada:', text: 'Balón' },
+        { label: '🥤 Sin atajadas:', text: 'Tomatodo' }
       ]
     }
   ];
@@ -127,7 +116,7 @@ const InstructionScreen = ({ onStart }) => {
             {currentCard.title}
           </h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {currentCard.sections.map((section, idx) => (
+            {currentCard.sections.filter(section => section.label || section.text).map((section, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, x: -10 }}
@@ -135,7 +124,7 @@ const InstructionScreen = ({ onStart }) => {
                 transition={{ delay: 0.1 + idx * 0.05 }}
               >
                 <p style={{ margin: 0, lineHeight: 1.4, fontSize: '0.9rem' }}>
-                  <strong>{section.label}</strong> {section.text}
+                  {section.label && <strong>{section.label} </strong>}{section.text}
                 </p>
               </motion.div>
             ))}
