@@ -7,8 +7,8 @@ const TARGET_ZONES = {
   center: { x: 50, y: 30 },
   right: { x: 75, y: 72 },
 };
-const GLOVE_HIT_RADIUS = 12;
-const GLOVE_VISUAL_OFFSET = { x: -18, y: -16 };
+const GLOVE_HIT_RADIUS = 20; // Aumentado de 12 a 20 para mejor detección
+const GLOVE_VISUAL_OFFSET = { x: 0, y: 0 }; // Removido offset visual - los guantes van donde el usuario toca
 
 const createDefaultGlovePosition = () => ({ ...DEFAULT_GLOVE_POSITION });
 
@@ -76,21 +76,31 @@ const GameScreen = ({ onEnd, isMuted }) => {
     const rect = gameArea.getBoundingClientRect();
     if (!rect.width || !rect.height) return;
 
-    // Calcular posición relative al elemento, considerando el viewport y scroll
-    let x = clientX - rect.left;
-    let y = clientY - rect.top;
+    // Calcular posición relativa al elemento, siendo más cuidadoso con el viewport
+    // En mobile, clientX/Y ya incluye todo lo necesario
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
 
     const nextPosition = {
       x: clamp((x / rect.width) * 100, 0, 100),
       y: clamp((y / rect.height) * 100, 0, 100),
     };
 
+    // Debug
+    console.log('getBoundingClientRect:', { left: rect.left, top: rect.top, width: rect.width, height: rect.height });
+    console.log('Touch coords:', { clientX, clientY });
+    console.log('Relative coords:', { x, y });
+    console.log('Percentage position:', nextPosition);
+
     setGlovePosition(nextPosition);
   }, []);
 
   const handleGamePointerMove = useCallback((event) => {
     if (gameState !== 'GHOST_MOVING') return;
-    if (event.pointerType !== 'mouse' && !pointerActiveRef.current) return;
+    
+    // Permitir mouse siempre, touch solo si está activo (pointerDown fue llamado)
+    const isTouch = event.pointerType === 'touch' || event.pointerType === 'pen';
+    if (isTouch && !pointerActiveRef.current) return;
 
     // Para touch events, obtener la coordenada del primer toque
     const clientX = event.touches?.[0]?.clientX ?? event.clientX;
@@ -161,7 +171,14 @@ const GameScreen = ({ onEnd, isMuted }) => {
 
   const evaluateResult = useCallback((actualBallPos) => {
     setGameState('ROUND_RESULT');
-    const isSave = getGloveHitZone(glovePosRef.current) === actualBallPos;
+    const detectedZone = getGloveHitZone(glovePosRef.current);
+    const isSave = detectedZone === actualBallPos;
+
+    console.log('EVALUATING RESULT:');
+    console.log('Glove position:', glovePosRef.current);
+    console.log('Detected zone:', detectedZone);
+    console.log('Actual ball position:', actualBallPos);
+    console.log('Is save?:', isSave);
 
     if (isSave) {
       setSaves(prev => prev + 1);
