@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 const InstructionScreen = ({ onStart }) => {
   const [activeCard, setActiveCard] = useState(0);
+  const [visitedCards, setVisitedCards] = useState(new Set([0])); // Marcar primera card como visitada
 
   const instructionCards = [
     {
@@ -38,6 +39,12 @@ const InstructionScreen = ({ onStart }) => {
 
   const currentCard = instructionCards[activeCard];
   const IconComponent = currentCard.icon;
+  const allCardsVisited = visitedCards.size === instructionCards.length;
+
+  const handleCardChange = (newIndex) => {
+    setActiveCard(newIndex);
+    setVisitedCards(prev => new Set([...prev, newIndex]));
+  };
 
   return (
     <motion.div
@@ -137,7 +144,7 @@ const InstructionScreen = ({ onStart }) => {
         {instructionCards.map((_, idx) => (
           <motion.button
             key={idx}
-            onClick={() => setActiveCard(idx)}
+            onClick={() => handleCardChange(idx)}
             whileHover={{ scale: 1.2 }}
             whileTap={{ scale: 0.95 }}
             style={{
@@ -157,7 +164,7 @@ const InstructionScreen = ({ onStart }) => {
       {/* Controles de navegación */}
       <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '1rem', flexShrink: 0 }}>
         <motion.button
-          onClick={() => setActiveCard(Math.max(0, activeCard - 1))}
+          onClick={() => handleCardChange(Math.max(0, activeCard - 1))}
           disabled={activeCard === 0}
           whileHover={{ scale: activeCard === 0 ? 1 : 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -178,7 +185,7 @@ const InstructionScreen = ({ onStart }) => {
         </motion.button>
 
         <motion.button
-          onClick={() => setActiveCard(Math.min(instructionCards.length - 1, activeCard + 1))}
+          onClick={() => handleCardChange(Math.min(instructionCards.length - 1, activeCard + 1))}
           disabled={activeCard === instructionCards.length - 1}
           whileHover={{ scale: activeCard === instructionCards.length - 1 ? 1 : 1.05 }}
           whileTap={{ scale: 0.95 }}
@@ -203,9 +210,10 @@ const InstructionScreen = ({ onStart }) => {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.5 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: allCardsVisited ? 1.05 : 1 }}
+        whileTap={{ scale: allCardsVisited ? 0.95 : 1 }}
         onClick={onStart}
+        disabled={!allCardsVisited}
         className="btn-primary"
         style={{ 
           width: '100%', 
@@ -214,10 +222,12 @@ const InstructionScreen = ({ onStart }) => {
           flexShrink: 0,
           fontWeight: 'bold',
           fontSize: '1.05rem',
-          padding: '0.9rem'
+          padding: '0.9rem',
+          opacity: allCardsVisited ? 1 : 0.5,
+          cursor: allCardsVisited ? 'pointer' : 'not-allowed'
         }}
       >
-        ¡A JUGAR! →
+        {allCardsVisited ? '¡A JUGAR! →' : '👀 Lee todas las instrucciones'}
       </motion.button>
     </motion.div>
   );
