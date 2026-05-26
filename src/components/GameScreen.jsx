@@ -8,6 +8,7 @@ const TARGET_ZONES = {
   right: { x: 75, y: 72 },
 };
 const GLOVE_HIT_RADIUS = 12;
+const GLOVE_VISUAL_OFFSET = { x: -18, y: -16 };
 
 const createDefaultGlovePosition = () => ({ ...DEFAULT_GLOVE_POSITION });
 
@@ -484,7 +485,7 @@ const GameScreen = ({ onEnd, isMuted }) => {
                 position: 'absolute',
                 top: `${glovePosition.y}%`,
                 left: `${glovePosition.x}%`,
-                transform: 'translate(-50%, -50%)',
+                transform: `translate(calc(-50% + ${GLOVE_VISUAL_OFFSET.x}px), calc(-50% + ${GLOVE_VISUAL_OFFSET.y}px))`,
                 width: '220px',
                 height: '140px',
                 display: 'flex',
