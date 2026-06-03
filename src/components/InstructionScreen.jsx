@@ -84,7 +84,7 @@ const InstructionScreen = ({ onStart }) => {
         style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0 1rem 0', flexShrink: 0 }}
       >
         <motion.img 
-          src="/assets/galindez.svg" 
+          src="/assets/galindez.webp" 
           alt="Hernán Galíndez" 
           style={{ maxHeight: '220px', objectFit: 'contain' }}
           animate={{ y: [0, -8, 0] }}

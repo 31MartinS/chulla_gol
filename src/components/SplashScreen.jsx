@@ -44,7 +44,7 @@ const SplashScreen = ({ onStart }) => {
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
         <motion.img 
-          src="/assets/hernan.svg" 
+          src="/assets/hernan.webp" 
           alt="Hernán Galíndez" 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
