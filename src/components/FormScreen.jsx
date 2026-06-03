@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import './FormScreen.css';
 
 const FormScreen = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -62,114 +63,108 @@ const FormScreen = ({ onSubmit }) => {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 50 }}
       transition={{ duration: 0.3 }}
-      style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', height: '100%', overflowY: 'auto' }}
     >
-      <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '1rem' }}>
-        <img src="/assets/Electrolux.png" alt="Electrolux" style={{ maxHeight: '70px', marginBottom: '1rem', maxWidth: '80%' }} />
-        <p style={{ color: 'var(--color-gold)', fontSize: '1.1rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+      <div className="form-header">
+        <img src="/assets/Electrolux.png" alt="Electrolux" className="form-logo" />
+        <p className="form-subtitle">
           Conviértete en las manos del Ecuador
-          <img src="https://flagcdn.com/w40/ec.png" alt="Bandera Ecuador" style={{ height: '1.2rem', borderRadius: '2px' }} />
+          <img src="https://flagcdn.com/w40/ec.png" alt="Bandera Ecuador" className="form-flag" />
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1 }}>
-        <div className="input-group">
-          <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Nombre Completo</label>
-          <input
-            type="text"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            style={inputStyle}
-            placeholder="Ej. Juan Pérez"
-          />
-          {errors.nombre && <span style={errorStyle}>{errors.nombre}</span>}
-        </div>
-
-        <div className="input-group">
-          <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Celular</label>
-          <input
-            type="tel"
-            name="celular"
-            value={formData.celular}
-            onChange={handleChange}
-            style={inputStyle}
-            placeholder="0991234567"
-            maxLength={10}
-          />
-          {errors.celular && <span style={errorStyle}>{errors.celular}</span>}
-        </div>
-
-        <div className="input-group">
-          <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Cédula</label>
-          <input
-            type="text"
-            name="cedula"
-            value={formData.cedula}
-            onChange={handleChange}
-            style={inputStyle}
-            placeholder="1701234567"
-            maxLength={10}
-          />
-          {errors.cedula && <span style={errorStyle}>{errors.cedula}</span>}
-        </div>
-
-        <div className="input-group">
-          <label style={{ display: 'block', marginBottom: '0.2rem', fontWeight: 600, fontSize: '0.9rem' }}>Correo Electrónico</label>
-          <input
-            type="email"
-            name="correo"
-            value={formData.correo}
-            onChange={handleChange}
-            style={inputStyle}
-            placeholder="juan@correo.com"
-          />
-          {errors.correo && <span style={errorStyle}>{errors.correo}</span>}
-        </div>
-
-        {/* Checkboxes Legales */}
-        <div style={{ marginTop: '0.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.75rem', lineHeight: 1.4, cursor: 'pointer' }}>
+      <form onSubmit={handleSubmit} className="form-body">
+        <div className="form-card">
+          <div className="input-group">
+            <label>Nombre Completo</label>
             <input
-              type="checkbox"
-              name="aceptaPoliticas"
-              checked={formData.aceptaPoliticas}
+              type="text"
+              name="nombre"
+              value={formData.nombre}
               onChange={handleChange}
-              style={{ marginTop: '2px', flexShrink: 0 }}
+              className="form-input"
+              placeholder="Ej. Juan Pérez"
             />
-            <div>
-              He leído y acepto la Política de Privacidad y autorizo de forma expresa a la empresa organizadora a tratar mis datos personales (nombre, cédula, teléfono y correo electrónico) con la finalidad de gestionar mi participación en la promoción, contactarme en caso de resultar ganador y enviarme información comercial, promocional y publicitaria. Declaro que los datos proporcionados son verídicos y que soy mayor de edad. Asimismo, entiendo que puedo ejercer mis derechos de acceso, rectificación, eliminación y oposición al tratamiento de mis datos personales conforme a la normativa vigente en Ecuador.
-              {errors.aceptaPoliticas && <span style={errorStyle}>{errors.aceptaPoliticas}</span>}
-            </div>
-          </label>
+            {errors.nombre && <span className="error-text">{errors.nombre}</span>}
+          </div>
 
-          <label style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '0.75rem', lineHeight: 1.4, cursor: 'pointer' }}>
+          <div className="input-group">
+            <label>Celular</label>
             <input
-              type="checkbox"
-              name="aceptaPromociones"
-              checked={formData.aceptaPromociones}
+              type="tel"
+              name="celular"
+              value={formData.celular}
               onChange={handleChange}
-              style={{ marginTop: '2px', flexShrink: 0 }}
+              className="form-input"
+              placeholder="0991234567"
+              maxLength={10}
             />
-            Deseo recibir información sobre promociones, ofertas y novedades.
-          </label>
+            {errors.celular && <span className="error-text">{errors.celular}</span>}
+          </div>
 
-        </div>
+          <div className="input-group">
+            <label>Cédula</label>
+            <input
+              type="text"
+              name="cedula"
+              value={formData.cedula}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="1701234567"
+              maxLength={10}
+            />
+            {errors.cedula && <span className="error-text">{errors.cedula}</span>}
+          </div>
 
-        <div style={{ marginTop: '1rem', marginBottom: '2rem' }}>
-          <button type="submit" className="btn-primary" style={{ width: '100%' }}>
-            Siguiente
-          </button>
+          <div className="input-group">
+            <label>Correo Electrónico</label>
+            <input
+              type="email"
+              name="correo"
+              value={formData.correo}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="juan@correo.com"
+            />
+            {errors.correo && <span className="error-text">{errors.correo}</span>}
+          </div>
 
-          <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', textAlign: 'justify', marginTop: '1.5rem', lineHeight: 1.4 }}>
-            Al registrarte, aceptas los Términos y Condiciones de la promoción. La asignación de premios se realiza mediante un sistema de probabilidades. Promoción válida hasta agotar stock. Aplican restricciones.
-          </p>
+          <div className="checkboxes">
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                name="aceptaPoliticas"
+                checked={formData.aceptaPoliticas}
+                onChange={handleChange}
+              />
+              <div className="legal-text">
+                He leído y acepto la Política de Privacidad y autorizo de forma expresa a la empresa organizadora a tratar mis datos personales (nombre, cédula, teléfono y correo electrónico) con la finalidad de gestionar mi participación en la promoción, contactarme en caso de resultar ganador y enviarme información comercial, promocional y publicitaria. Declaro que los datos proporcionados son verídicos y que soy mayor de edad. Asimismo, entiendo que puedo ejercer mis derechos de acceso, rectificación, eliminación y oposición al tratamiento de mis datos personales conforme a la normativa vigente en Ecuador.
+                {errors.aceptaPoliticas && <span className="error-text">{errors.aceptaPoliticas}</span>}
+              </div>
+            </label>
 
-          <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem', paddingBottom: '1rem' }}>
-            <p style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.5)', margin: 0 }}>
-              &copy; {new Date().getFullYear()} Electrolux. Todos los derechos reservados.
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                name="aceptaPromociones"
+                checked={formData.aceptaPromociones}
+                onChange={handleChange}
+              />
+              <div className="legal-text">Deseo recibir información sobre promociones, ofertas y novedades.</div>
+            </label>
+          </div>
+
+          <div className="form-actions">
+            <button type="submit" className="btn-primary full-width">
+              Siguiente
+            </button>
+
+            <p className="small-note">
+              Al registrarte, aceptas los Términos y Condiciones de la promoción. La asignación de premios se realiza mediante un sistema de probabilidades. Promoción válida hasta agotar stock. Aplican restricciones.
             </p>
+
+            <div className="form-footer">
+              <p>&copy; {new Date().getFullYear()} Electrolux. Todos los derechos reservados.</p>
+            </div>
           </div>
         </div>
       </form>
@@ -177,23 +172,6 @@ const FormScreen = ({ onSubmit }) => {
   );
 };
 
-const inputStyle = {
-  width: '100%',
-  padding: '10px 14px',
-  borderRadius: '8px',
-  border: '1px solid var(--color-accent-teal)',
-  backgroundColor: 'rgba(255, 255, 255, 0.05)',
-  color: 'var(--color-white)',
-  fontSize: '0.95rem',
-  outline: 'none',
-  fontFamily: 'inherit'
-};
 
-const errorStyle = {
-  color: 'var(--color-red)',
-  fontSize: '0.8rem',
-  marginTop: '0.2rem',
-  display: 'block'
-};
 
 export default FormScreen;

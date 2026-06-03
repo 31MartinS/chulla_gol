@@ -35,16 +35,19 @@ const SplashScreen = ({ onStart }) => {
         overflowY: 'auto'
       }}
     >
-      {/* Fondo del Estadio */}
+      {/* Fondo del Estadio (pantalla inicio) */}
       <img 
-        src="/assets/fondo_estadio.svg" 
-        alt="Fondo Estadio" 
-        style={{ position: 'absolute', top: 0, left: '-20%', width: '140%', height: '100%', objectFit: 'cover', zIndex: 0, opacity: 0.5 }} 
+        src="/assets/fondo_estadio_inicio.svg" 
+        alt="Fondo Estadio Inicio" 
+        style={{ position: 'absolute', top: 0, left: '-15%', width: '130%', height: '100%', objectFit: 'cover', zIndex: 0, opacity: 0.6 }} 
       />
 
-      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+      {/* Overlay para mejorar legibilidad de textos e imágenes */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(2,18,38,0.7) 0%, rgba(2,18,38,0.35) 40%, rgba(2,18,38,0.6) 100%)' }} />
+
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '0 0.5rem' }}>
         <motion.img 
-          src="/assets/hernan.webp" 
+          src="/assets/hernan.svg" 
           alt="Hernán Galíndez" 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
