@@ -39,7 +39,7 @@ const SplashScreen = ({ onStart }) => {
       <img 
         src="/assets/fondo_estadio_inicio.svg" 
         alt="Fondo Estadio Inicio" 
-        style={{ position: 'absolute', top: 0, left: '-15%', width: '130%', height: '100%', objectFit: 'cover', zIndex: 0, opacity: 0.6 }} 
+        style={{ position: 'absolute', top: 0, left: '-15%', width: '130%', height: '100%', objectFit: 'cover', zIndex: 0}} 
       />
 
       {/* Overlay para mejorar legibilidad de textos e imágenes */}
