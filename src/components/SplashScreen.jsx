@@ -43,7 +43,7 @@ const SplashScreen = ({ onStart }) => {
       />
 
       {/* Overlay para mejorar legibilidad de textos e imágenes */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(2,18,38,0.7) 0%, rgba(2,18,38,0.35) 40%, rgba(2,18,38,0.6) 100%)' }} />
+      <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(2,18,38,0.28) 0%, rgba(2,18,38,0.12) 40%, rgba(2,18,38,0.22) 100%)' }} />
 
       <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '0 0.5rem' }}>
         <motion.img 
