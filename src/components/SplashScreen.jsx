@@ -45,20 +45,21 @@ const SplashScreen = ({ onStart }) => {
       {/* Overlay para mejorar legibilidad de textos e imágenes */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 1, background: 'linear-gradient(to bottom, rgba(2,18,38,0.28) 0%, rgba(2,18,38,0.12) 40%, rgba(2,18,38,0.22) 100%)' }} />
 
-      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '0 0.5rem' }}>
+      <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', padding: '0 0.5rem' }}>
         <motion.img 
           src="/assets/hernan.svg" 
           alt="Hernán Galíndez" 
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          style={{ height: '30vh', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))' }}
+          style={{ height: '30vh', objectFit: 'contain', filter: 'drop-shadow(0 10px 15px rgba(0,0,0,0.5))', display: 'block', marginBottom: '-0.15rem' }}
         />
 
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
+          style={{ position: 'relative', zIndex: 12, marginTop: '-0.85rem' }}
         >
           <h1 style={{ 
             fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', 
@@ -69,7 +70,7 @@ const SplashScreen = ({ onStart }) => {
             wordBreak: 'break-word',
             padding: '0 0.5rem'
           }}>
-            ¡CONVIÉRTETE EN LAS MANOS DE LA TRI!
+            ¡CONVIÉRTETE EN LAS MANOS DE LA SELECCIÓN!
           </h1>
         </motion.div>
 
@@ -79,7 +80,7 @@ const SplashScreen = ({ onStart }) => {
               initial={{ opacity: 0 }}
               animate={{ opacity: [0.5, 1, 0.5] }}
               transition={{ delay: 1, repeat: Infinity, duration: 1.5 }}
-              style={{ color: 'var(--color-white)', fontSize: '1.2rem', marginTop: '2rem', textShadow: '1px 1px 3px rgba(0,0,0,1)' }}
+              style={{ color: 'var(--color-white)', fontSize: '1.2rem', marginTop: '1.2rem', textShadow: '1px 1px 3px rgba(0,0,0,1)', position: 'relative', zIndex: 12 }}
             >
               Toca la pantalla para comenzar
             </motion.p>
@@ -90,7 +91,7 @@ const SplashScreen = ({ onStart }) => {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            style={{ marginTop: '2rem' }}
+            style={{ marginTop: '1.2rem', position: 'relative', zIndex: 12 }}
           >
             <div style={{ width: '40px', height: '40px', border: '4px solid rgba(255,255,255,0.3)', borderTop: '4px solid var(--color-gold)', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
             <style>

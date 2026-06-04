@@ -81,14 +81,12 @@ const InstructionScreen = ({ onStart }) => {
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2, type: 'spring' }}
-        style={{ display: 'flex', justifyContent: 'center', margin: '0.5rem 0 1rem 0', flexShrink: 0 }}
+        style={{ display: 'flex', justifyContent: 'center', margin: '0.25rem 0 0.45rem 0', flexShrink: 0 }}
       >
         <motion.img 
           src="/assets/galindez.svg" 
           alt="Hernán Galíndez" 
-          style={{ maxHeight: '220px', objectFit: 'contain' }}
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 3, repeat: Infinity }}
+          style={{ maxHeight: '220px', objectFit: 'contain', display: 'block', marginBottom: '-0.2rem' }}
         />
       </motion.div>
 
@@ -100,12 +98,15 @@ const InstructionScreen = ({ onStart }) => {
         exit={{ opacity: 0, x: -30 }}
         transition={{ duration: 0.3 }}
         style={{ 
+          position: 'relative',
+          zIndex: 12,
           display: 'flex', 
           alignItems: 'flex-start', 
           gap: '0.9rem', 
           backgroundColor: 'var(--color-secondary)', 
           padding: '1rem', 
           borderRadius: '16px',
+          marginTop: '-0.5rem',
           marginBottom: '0.8rem',
           border: `2px solid ${currentCard.color}`,
           flexShrink: 0
@@ -140,7 +141,7 @@ const InstructionScreen = ({ onStart }) => {
       </motion.div>
 
       {/* Indicadores de navegación */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginBottom: '1rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '0.6rem', marginTop: '-0.15rem', marginBottom: '1rem', flexShrink: 0, position: 'relative', zIndex: 12 }}>
         {instructionCards.map((_, idx) => (
           <motion.button
             key={idx}
@@ -162,7 +163,7 @@ const InstructionScreen = ({ onStart }) => {
       </div>
 
       {/* Controles de navegación */}
-      <div style={{ display: 'flex', gap: '0.8rem', marginBottom: '1rem', flexShrink: 0 }}>
+      <div style={{ display: 'flex', gap: '0.8rem', marginTop: '-0.1rem', marginBottom: '1rem', flexShrink: 0, position: 'relative', zIndex: 12 }}>
         <motion.button
           onClick={() => handleCardChange(Math.max(0, activeCard - 1))}
           disabled={activeCard === 0}
@@ -216,6 +217,8 @@ const InstructionScreen = ({ onStart }) => {
         disabled={!allCardsVisited}
         className="btn-primary"
         style={{ 
+          position: 'relative',
+          zIndex: 12,
           width: '100%', 
           marginTop: '1rem', 
           marginBottom: '1rem',
