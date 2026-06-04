@@ -59,16 +59,30 @@ const SplashScreen = ({ onStart }) => {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.5, duration: 0.5 }}
-          style={{ position: 'relative', zIndex: 12, marginTop: '-0.85rem' }}
+          style={{
+            position: 'relative',
+            zIndex: 12,
+            marginTop: '-0.85rem',
+            width: 'min(82vw, 320px)',
+            aspectRatio: '1 / 1',
+            padding: '1rem',
+            borderRadius: '18px',
+            background: 'rgba(2,18,38)',
+            border: '2px solid rgba(255, 209, 102, 0.95)',
+            boxShadow: '0 14px 30px rgba(0,0,0,0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
         >
-          <h1 style={{ 
-            fontSize: 'clamp(1.5rem, 6vw, 2.2rem)', 
-            color: 'var(--color-gold)', 
-            margin: '0', 
-            lineHeight: 1.2,
+          <h1 style={{
+            fontSize: 'clamp(1.35rem, 5vw, 2rem)',
+            color: 'var(--color-gold)',
+            margin: '0',
+            lineHeight: 1.15,
             textShadow: '3px 3px 6px rgba(0,0,0,0.8)',
             wordBreak: 'break-word',
-            padding: '0 0.5rem'
+            textAlign: 'center'
           }}>
             ¡CONVIÉRTETE EN LAS MANOS DE LA SELECCIÓN!
           </h1>
