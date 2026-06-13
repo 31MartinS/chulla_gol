@@ -98,7 +98,7 @@ function App() {
         setSubmissionMessage('Registro guardado correctamente.');
       })
       .catch((error) => {
-        console.error('Error guardando el registro en Firebase:', error);
+        console.error('Error guardando el registro:', error);
         setSubmissionStatus('error');
         if (error?.code === 'permission-denied') {
           setSubmissionMessage('Firestore rechazó la escritura. Revisa las reglas de seguridad de la base de datos.');

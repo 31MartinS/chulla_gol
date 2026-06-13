@@ -51,7 +51,7 @@ const ResultScreen = ({ result, submissionStatus, submissionMessage }) => {
         </p>
 
         <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.78)', margin: '0.75rem 0 0', lineHeight: 1.4 }}>
-          {submissionStatus === 'saving' && 'Guardando tu registro en Firebase...'}
+          {submissionStatus === 'saving' && 'Guardando tu registro...'}
           {submissionStatus === 'success' && submissionMessage}
           {submissionStatus === 'error' && submissionMessage}
         </p>
