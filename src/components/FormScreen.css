@@ -126,6 +126,97 @@
   color: rgba(255,255,255,0.9);
 }
 
+.legal-link {
+  color: var(--color-gold);
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.terms-trigger {
+  align-self: flex-start;
+  background: transparent;
+  border: 0;
+  color: var(--color-gold);
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.inline-terms-link {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--color-gold);
+  font: inherit;
+  font-size: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 18, 38, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal-card {
+  width: min(100%, 420px);
+  max-height: min(80vh, 720px);
+  background: linear-gradient(180deg, rgba(9, 33, 64, 0.98), rgba(4, 29, 38, 0.98));
+  border: 1px solid rgba(255, 179, 0, 0.35);
+  border-radius: 18px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1rem 0.85rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.modal-header h3 {
+  font-size: 1.05rem;
+  margin: 0;
+  color: var(--color-gold);
+}
+
+.modal-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--color-white);
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.modal-body {
+  padding: 1rem;
+  overflow-y: auto;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.modal-body p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .form-actions {
   margin-top: 0.5rem;
   display: flex;

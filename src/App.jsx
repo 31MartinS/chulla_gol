@@ -5,6 +5,7 @@ import InstructionScreen from './components/InstructionScreen';
 import GameScreen from './components/GameScreen';
 import ResultScreen from './components/ResultScreen';
 import SplashScreen from './components/SplashScreen';
+import { savePromotionRegistration } from './services/promotionRecords';
 import './index.css';
 
 const SCREENS = {
@@ -17,8 +18,10 @@ const SCREENS = {
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState(SCREENS.SPLASH);
-  const [, setUserData] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [gameResult, setGameResult] = useState(null); 
+  const [submissionStatus, setSubmissionStatus] = useState('idle');
+  const [submissionMessage, setSubmissionMessage] = useState('');
 
   // Audio Reference
   const bgMusicRef = useRef(null);
@@ -79,12 +82,44 @@ function App() {
   const handleGameEnd = (result) => {
     setGameResult(result);
     setCurrentScreen(SCREENS.RESULTS);
+
+    if (!userData) {
+      setSubmissionStatus('error');
+      setSubmissionMessage('No fue posible guardar el registro porque faltan los datos del formulario.');
+      return;
+    }
+
+    setSubmissionStatus('saving');
+    setSubmissionMessage('Guardando...');
+
+    savePromotionRegistration({ userData, gameResult: result })
+      .then(() => {
+        setSubmissionStatus('success');
+        setSubmissionMessage('Registro guardado correctamente.');
+      })
+      .catch((error) => {
+        console.error('Error guardando el registro en Firebase:', error);
+        setSubmissionStatus('error');
+        if (error?.code === 'permission-denied') {
+          setSubmissionMessage('Firestore rechazó la escritura. Revisa las reglas de seguridad de la base de datos.');
+          return;
+        }
+
+        if (String(error?.message || '').includes('ERR_BLOCKED_BY_CLIENT')) {
+          setSubmissionMessage('El navegador bloqueó la conexión a Firebase. Desactiva el bloqueador de anuncios o permite firestore.googleapis.com.');
+          return;
+        }
+
+        setSubmissionMessage('No se pudo guardar el registro en Firebase. Revisa las variables de Vercel o la conexión de red.');
+      });
   };
 
   const handleRestart = () => {
     setCurrentScreen(SCREENS.SPLASH);
     setUserData(null);
     setGameResult(null);
+    setSubmissionStatus('idle');
+    setSubmissionMessage('');
   };
 
   return (
@@ -135,7 +170,13 @@ function App() {
           <GameScreen key="game" onEnd={handleGameEnd} isMuted={isMuted} />
         )}
         {currentScreen === SCREENS.RESULTS && (
-          <ResultScreen key="results" result={gameResult} onRestart={handleRestart} />
+          <ResultScreen
+            key="results"
+            result={gameResult}
+            onRestart={handleRestart}
+            submissionStatus={submissionStatus}
+            submissionMessage={submissionMessage}
+          />
         )}
       </AnimatePresence>
     </div>

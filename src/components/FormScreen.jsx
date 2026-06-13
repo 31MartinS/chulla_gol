@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import './FormScreen.css';
 
 const FormScreen = ({ onSubmit }) => {
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [formData, setFormData] = useState({
     nombre: '',
     celular: '',
@@ -13,6 +14,7 @@ const FormScreen = ({ onSubmit }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const privacyUrl = 'https://www.electrolux.com.ec/politica-de-privacidad';
 
   const validate = () => {
     let tempErrors = {};
@@ -42,7 +44,11 @@ const FormScreen = ({ onSubmit }) => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    const val = type === 'checkbox' ? checked : value;
+    const rawValue = type === 'checkbox' ? checked : value;
+    const val =
+      name === 'celular' || name === 'cedula'
+        ? String(rawValue).replace(/\D/g, '').slice(0, 10)
+        : rawValue;
 
     setFormData(prev => ({ ...prev, [name]: val }));
 
@@ -83,6 +89,8 @@ const FormScreen = ({ onSubmit }) => {
               onChange={handleChange}
               className="form-input"
               placeholder="Ej. Juan Pérez"
+              autoComplete="name"
+              maxLength={80}
             />
             {errors.nombre && <span className="error-text">{errors.nombre}</span>}
           </div>
@@ -97,6 +105,8 @@ const FormScreen = ({ onSubmit }) => {
               className="form-input"
               placeholder="0991234567"
               maxLength={10}
+              inputMode="numeric"
+              autoComplete="tel"
             />
             {errors.celular && <span className="error-text">{errors.celular}</span>}
           </div>
@@ -111,6 +121,8 @@ const FormScreen = ({ onSubmit }) => {
               className="form-input"
               placeholder="1701234567"
               maxLength={10}
+              inputMode="numeric"
+              autoComplete="off"
             />
             {errors.cedula && <span className="error-text">{errors.cedula}</span>}
           </div>
@@ -124,6 +136,8 @@ const FormScreen = ({ onSubmit }) => {
               onChange={handleChange}
               className="form-input"
               placeholder="juan@correo.com"
+              autoComplete="email"
+              maxLength={120}
             />
             {errors.correo && <span className="error-text">{errors.correo}</span>}
           </div>
@@ -137,7 +151,7 @@ const FormScreen = ({ onSubmit }) => {
                 onChange={handleChange}
               />
               <div className="legal-text">
-                He leído y acepto la Política de Privacidad y autorizo de forma expresa a la empresa organizadora a tratar mis datos personales (nombre, cédula, teléfono y correo electrónico) con la finalidad de gestionar mi participación en la promoción, contactarme en caso de resultar ganador y enviarme información comercial, promocional y publicitaria. Declaro que los datos proporcionados son verídicos y que soy mayor de edad. Asimismo, entiendo que puedo ejercer mis derechos de acceso, rectificación, eliminación y oposición al tratamiento de mis datos personales conforme a la normativa vigente en Ecuador.
+                He leído y acepto las <a href={privacyUrl} target="_blank" rel="noreferrer noopener" className="legal-link">policitas de privacidad</a>. Autorizo el tratamiento de mis datos personales para gestionar mi participación, validar mi identidad, contactarme si resulto ganador y, si marco la casilla siguiente, enviarme información promocional. Declaro que mis datos son veraces y que soy mayor de edad.
                 {errors.aceptaPoliticas && <span className="error-text">{errors.aceptaPoliticas}</span>}
               </div>
             </label>
@@ -159,7 +173,15 @@ const FormScreen = ({ onSubmit }) => {
             </button>
 
             <p className="small-note">
-              Al registrarte, aceptas los Términos y Condiciones de la promoción. La asignación de premios se realiza mediante un sistema de probabilidades. Promoción válida hasta agotar stock. Aplican restricciones.
+              Al registrarte, aceptas los{' '}
+              <button
+                type="button"
+                className="inline-terms-link"
+                onClick={() => setShowTermsModal(true)}
+              >
+                Términos y Condiciones
+              </button>{' '}
+              de la promoción. La asignación de premios se realiza mediante un sistema de probabilidades. Promoción válida hasta agotar stock. Aplican restricciones.
             </p>
 
             <div className="form-footer">
@@ -168,6 +190,43 @@ const FormScreen = ({ onSubmit }) => {
           </div>
         </div>
       </form>
+
+      {showTermsModal && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setShowTermsModal(false)}>
+          <div
+            className="modal-card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="terms-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="modal-header">
+              <h3 id="terms-title">Términos y condiciones</h3>
+              <button type="button" className="modal-close" onClick={() => setShowTermsModal(false)} aria-label="Cerrar">
+                ×
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p>
+                Promoción válida para personas mayores de edad, residentes en Ecuador, durante la vigencia definida por la organizadora y hasta agotar stock de premios.
+              </p>
+              <p>
+                La participación requiere datos veraces y completos. La organizadora podrá verificar la información registrada y descalificar participaciones con datos falsos, duplicados, incompletos o con indicios de fraude.
+              </p>
+              <p>
+                El premio entregado dependerá del resultado obtenido en la dinámica. Los premios no son canjeables por dinero ni transferibles, salvo que la organizadora disponga lo contrario por escrito.
+              </p>
+              <p>
+                La organizadora podrá modificar, suspender o cancelar la promoción por causa justificada, fuerza mayor o por razones operativas, informando por los medios que considere adecuados.
+              </p>
+              <p>
+                Al participar, aceptas estos términos, la política de privacidad y el tratamiento de tus datos personales conforme a la normativa aplicable.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 };

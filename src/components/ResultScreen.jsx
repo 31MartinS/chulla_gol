@@ -1,11 +1,13 @@
 import { motion } from 'framer-motion';
 import { Trophy, Gift } from 'lucide-react';
+import { getPrizeLabel } from '../utils/prize';
 
-const ResultScreen = ({ result, onRestart }) => {
+const ResultScreen = ({ result, submissionStatus, submissionMessage }) => {
   const { saves, total } = result || { saves: 0, total: 2 };
   
   // Condición de victoria: tapar los 2 goles
   const isWinner = saves >= total;
+  const prizeLabel = getPrizeLabel(saves, total);
 
   return (
     <motion.div 
@@ -45,22 +47,16 @@ const ResultScreen = ({ result, onRestart }) => {
         </h2>
         
         <p style={{ fontSize: '1.1rem', color: 'var(--color-white)', margin: 0, fontWeight: 600 }}>
-          {saves === 2 && '👕 1 camiseta para apoyar a la selección'}
-          {saves === 1 && '⚽ Balón'}
-          {saves === 0 && '🥤 Tomatodo'}
+          {prizeLabel}
+        </p>
+
+        <p style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.78)', margin: '0.75rem 0 0', lineHeight: 1.4 }}>
+          {submissionStatus === 'saving' && 'Guardando tu registro en Firebase...'}
+          {submissionStatus === 'success' && submissionMessage}
+          {submissionStatus === 'error' && submissionMessage}
         </p>
       </div>
 
-      <motion.button 
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        onClick={onRestart} 
-        className="btn-primary" 
-        style={{ width: '100%' }}
-      >
-        VOLVER A JUGAR
-      </motion.button>
     </motion.div>
   );
 };

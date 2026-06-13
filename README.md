@@ -1,16 +1,32 @@
-# React + Vite
+# Chulla Gol
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación React + Vite con registro de formulario y guardado de resultados en Firebase Firestore.
 
-Currently, two official plugins are available:
+## Firebase en Vercel
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Define estas variables de entorno en Vercel y, para desarrollo local, en un archivo `.env.local`:
 
-## React Compiler
+```bash
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+VITE_FIREBASE_COLLECTION_NAME=promocion_registros
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+La app guarda cada registro en Firestore con los datos del formulario, el resultado de la partida, el premio obtenido y la marca de tiempo del servidor.
 
-## Expanding the ESLint configuration
+## Seguridad básica
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- La validación principal sigue en el cliente para bloquear datos vacíos o mal formados antes de enviar.
+- No se exponen claves en el código; todo se toma desde variables de entorno.
+- Revisa las reglas de Firestore para permitir solo escrituras necesarias para esta promoción.
+
+## Desarrollo
+
+- `npm install`
+- `npm run dev`
+- `npm run build`
