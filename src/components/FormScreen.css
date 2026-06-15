@@ -246,3 +246,16 @@
   .form-screen { padding: 1rem; }
   .form-logo { max-height: 56px; }
 }
+
+.validating-text {
+  display: block;
+  font-size: 0.75rem;
+  color: #ffd966;
+  margin-top: 0.25rem;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

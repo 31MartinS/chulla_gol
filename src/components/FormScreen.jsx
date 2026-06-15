@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { checkExistingUser } from '../services/validationService';
 import './FormScreen.css';
 
 const FormScreen = ({ onSubmit }) => {
@@ -14,30 +15,150 @@ const FormScreen = ({ onSubmit }) => {
   });
 
   const [errors, setErrors] = useState({});
+  const [isValidating, setIsValidating] = useState(false);
   const privacyUrl = 'https://www.electrolux.com.ec/politica-de-privacidad';
 
-  const validate = () => {
+  // Validación en tiempo real de cédula (cuando pierde el foco)
+  const handleCedulaBlur = async () => {
+    const cedula = formData.cedula;
+    
+    // Primero validar formato
+    const idRegex = /^[0-9]{10}$/;
+    if (!idRegex.test(cedula)) {
+      setErrors(prev => ({ ...prev, cedula: "La cédula debe tener 10 dígitos numéricos" }));
+      return;
+    }
+    
+    // Limpiar error de formato si existe
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.cedula;
+      return newErrors;
+    });
+    
+    // Verificar si ya está registrada
+    setIsValidating(true);
+    try {
+      const { cedulaExiste } = await checkExistingUser({ cedula, correo: '' });
+      if (cedulaExiste) {
+        setErrors(prev => ({ ...prev, cedula: "Esta cédula ya está registrada en la promoción" }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.cedula;
+          return newErrors;
+        });
+      }
+    } catch (error) {
+      console.error('Error validando cédula:', error);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  // Validación en tiempo real de email (cuando pierde el foco)
+  const handleEmailBlur = async () => {
+    const email = formData.correo;
+    
+    // Primero validar formato
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setErrors(prev => ({ ...prev, correo: "Correo electrónico inválido" }));
+      return;
+    }
+    
+    // Limpiar error de formato si existe
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.correo;
+      return newErrors;
+    });
+    
+    // Verificar si ya está registrado
+    setIsValidating(true);
+    try {
+      const { emailExiste } = await checkExistingUser({ cedula: '', correo: email });
+      if (emailExiste) {
+        setErrors(prev => ({ ...prev, correo: "Este correo ya está registrado en la promoción" }));
+      } else {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.correo;
+          return newErrors;
+        });
+      }
+    } catch (error) {
+      console.error('Error validando email:', error);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const validate = async () => {
     let tempErrors = {};
+    
+    // Validaciones básicas
     if (!formData.nombre.trim()) tempErrors.nombre = "El nombre es requerido";
 
     const phoneRegex = /^[0-9]{10}$/;
     if (!phoneRegex.test(formData.celular)) tempErrors.celular = "Debe tener 10 dígitos numéricos";
 
     const idRegex = /^[0-9]{10}$/;
-    if (!idRegex.test(formData.cedula)) tempErrors.cedula = "La cédula debe tener 10 dígitos numéricos";
+    if (!idRegex.test(formData.cedula)) {
+      tempErrors.cedula = "La cédula debe tener 10 dígitos numéricos";
+    }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.correo)) tempErrors.correo = "Correo electrónico inválido";
+    if (!emailRegex.test(formData.correo)) {
+      tempErrors.correo = "Correo electrónico inválido";
+    }
 
-    if (!formData.aceptaPoliticas) tempErrors.aceptaPoliticas = "Debe aceptar la política de privacidad";
+    if (!formData.aceptaPoliticas) {
+      tempErrors.aceptaPoliticas = "Debe aceptar la política de privacidad";
+    }
 
-    setErrors(tempErrors);
-    return Object.keys(tempErrors).length === 0;
+    // Si hay errores de formato, mostrar inmediatamente
+    if (Object.keys(tempErrors).length > 0) {
+      setErrors(tempErrors);
+      return false;
+    }
+
+    // Validar duplicados en Firestore
+    setIsValidating(true);
+    try {
+      const { cedulaExiste, emailExiste } = await checkExistingUser({
+        cedula: formData.cedula,
+        correo: formData.correo
+      });
+      
+      if (cedulaExiste) {
+        tempErrors.cedula = "Esta cédula ya está registrada en la promoción";
+      }
+      
+      if (emailExiste) {
+        tempErrors.correo = "Este correo ya está registrado en la promoción";
+      }
+      
+      if (Object.keys(tempErrors).length > 0) {
+        setErrors(tempErrors);
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error validando duplicados:', error);
+      // En caso de error de conexión, permitimos el registro pero mostramos advertencia
+      setErrors({});
+      return true;
+    } finally {
+      setIsValidating(false);
+    }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
+    const isValid = await validate();
+    if (isValid) {
       onSubmit(formData);
     }
   };
@@ -118,6 +239,7 @@ const FormScreen = ({ onSubmit }) => {
               name="cedula"
               value={formData.cedula}
               onChange={handleChange}
+              onBlur={handleCedulaBlur}
               className="form-input"
               placeholder="1701234567"
               maxLength={10}
@@ -125,6 +247,7 @@ const FormScreen = ({ onSubmit }) => {
               autoComplete="off"
             />
             {errors.cedula && <span className="error-text">{errors.cedula}</span>}
+            {isValidating && <span className="validating-text">Verificando cédula...</span>}
           </div>
 
           <div className="input-group">
@@ -134,12 +257,14 @@ const FormScreen = ({ onSubmit }) => {
               name="correo"
               value={formData.correo}
               onChange={handleChange}
+              onBlur={handleEmailBlur}
               className="form-input"
               placeholder="juan@correo.com"
               autoComplete="email"
               maxLength={120}
             />
             {errors.correo && <span className="error-text">{errors.correo}</span>}
+            {isValidating && <span className="validating-text">Verificando correo...</span>}
           </div>
 
           <div className="checkboxes">
@@ -151,7 +276,7 @@ const FormScreen = ({ onSubmit }) => {
                 onChange={handleChange}
               />
               <div className="legal-text">
-                He leído y acepto las <a href={privacyUrl} target="_blank" rel="noreferrer noopener" className="legal-link">policitas de privacidad</a>. Autorizo el tratamiento de mis datos personales para gestionar mi participación, validar mi identidad, contactarme si resulto ganador y, si marco la casilla siguiente, enviarme información promocional. Declaro que mis datos son veraces y que soy mayor de edad.
+                He leído y acepto las <a href={privacyUrl} target="_blank" rel="noreferrer noopener" className="legal-link">políticas de privacidad</a>. Autorizo el tratamiento de mis datos personales para gestionar mi participación, validar mi identidad, contactarme si resulto ganador y, si marco la casilla siguiente, enviarme información promocional. Declaro que mis datos son veraces y que soy mayor de edad.
                 {errors.aceptaPoliticas && <span className="error-text">{errors.aceptaPoliticas}</span>}
               </div>
             </label>
@@ -168,8 +293,8 @@ const FormScreen = ({ onSubmit }) => {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn-primary full-width">
-              Siguiente
+            <button type="submit" className="btn-primary full-width" disabled={isValidating}>
+              {isValidating ? 'Verificando...' : 'Siguiente'}
             </button>
 
             <p className="small-note">
@@ -230,7 +355,5 @@ const FormScreen = ({ onSubmit }) => {
     </motion.div>
   );
 };
-
-
 
 export default FormScreen;
